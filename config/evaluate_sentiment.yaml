@@ -1,0 +1,11 @@
+attribute: "sentiment"
+padding: "right"
+max_seq_length: 1024
+control_attribute_values: ['Positive', 'Negative']
+
+evaluation:
+  metrics:
+    - slor
+    - accuracy
+    - distinct-n
+    

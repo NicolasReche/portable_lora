@@ -1,0 +1,39 @@
+max_seq_length: 1024
+wandb_project: "RL_peft_mod"
+attributes:
+  - sentiment
+training:
+  per_device_train_batch_size: 16
+  per_device_eval_batch_size: 16
+  gradient_accumulation_steps: 8
+  learning_rate: 1e-4
+  weight_decay: 0.05
+  optim: "paged_adamw_32bit"
+  fp16: false
+  bf16: true
+  max_grad_norm: 1
+  max_steps: 400
+  warmup_ratio: 0.05
+  group_by_length: true
+  lr_scheduler_type: "cosine"
+  overwrite_output_dir: true
+  save_strategy: "steps"
+  save_total_limit: 3
+  save_steps: 100
+  eval_strategy: "steps"
+  eval_steps: 20
+  logging_strategy: "steps"
+  logging_steps: 5
+lora:
+  r: 32
+  alpha: 64
+  dropout: 0.1
+  target_modules: ["q_proj", "v_proj", "k_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+  bias: "none"
+  task_type: "CAUSAL_LM"
+model:
+  base_model: "Qwen/Qwen3-8B"
+  pad_token: "<|endoftext|>"
+data:
+  train_file: "./data/yelp_train_sampled_len_distr.csv"
+  val_file: "./data/yelp_val_sampled_len_distr.csv"

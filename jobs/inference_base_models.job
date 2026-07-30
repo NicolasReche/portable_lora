@@ -1,0 +1,20 @@
+#!/bin/bash
+#SBATCH -J base_inf
+#SBATCH --gres=gpu:a100:1
+
+cd  /home/mlorandi/PEFT_mod_port/
+source .venv/bin/activate
+
+ctg_attributes=("sentiment" "topic")
+seeds=(7097 4613 89723)
+models=("llama31" "llama32" "qwen38b" "qwen34b")
+for seed in "${seeds[@]}"
+do
+    for model in "${models[@]}"
+    do
+        for attribute in "${ctg_attributes[@]}"
+        do
+            uv run scripts/base_inference.py --seed $seed --tgt_model $model --attribute $attribute --dataset data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv --output outputs/base_${model}_${attribute}_seed${seed}.json
+        done
+    done
+done

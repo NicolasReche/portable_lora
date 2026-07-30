@@ -1,0 +1,19 @@
+[project]
+name = "peft-mod-port"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "bitsandbytes>=0.49.2",
+    "evaluate>=0.4.6",
+    "peft>=0.19.1",
+    "scikit-learn>=1.8.0",
+    "scipy>=1.17.1",
+    "sentencepiece>=0.2.1",
+    "tiktoken>=0.13.0",
+    "torch>=2.11.0",
+    "transformers>=5.7.0",
+    "trl>=1.3.0",
+    "wandb>=0.26.1",
+]

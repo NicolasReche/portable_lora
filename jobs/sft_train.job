@@ -1,0 +1,20 @@
+#!/bin/bash
+#SBATCH -J sft_train
+#SBATCH --gres=gpu:a100:1
+
+cd  /home/mlorandi/PEFT_mod_port/
+source .venv/bin/activate
+
+ctg_attributes=("sentiment" "topic")
+seeds=(7097 4613 89723)
+models=("llama3.1_8b" "llama3.2_3b" "qwen3_4b" "qwen3_8b")
+for attribute in "${ctg_attributes[@]}"
+do
+    for seed in "${seeds[@]}"
+    do
+        for model in "${models[@]}"
+        do
+	        uv run scripts/train_sft_model.py --config_path config/sft_train_${model}_${attribute}.yaml --seed $seed --model_dir models --run_name sft_${model}_${attribute}_seed${seed}
+        done
+    done
+done

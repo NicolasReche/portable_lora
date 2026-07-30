@@ -1,0 +1,20 @@
+#!/bin/bash
+#SBATCH -J llama31_eval
+#SBATCH --gres=gpu:rtxa6000:1
+
+cd  /home/mlorandi/PEFT_mod_port/
+source .venv/bin/activate
+
+ctg_attributes=("sentiment" "topic")
+seeds=(7097 4613 89723)
+models=("llama31" "llama32" "qwen38b" "qwen34b")
+for seed in "${seeds[@]}"
+do
+    for model in "${models[@]}"
+    do
+        for attribute in "${ctg_attributes[@]}"
+        do
+            uv run scripts/main_eval.py --config evaluate_${attribute}.yaml --seed $seed --output_file outputs/llama31_to_${model}_${attribute}_seed${seed}.json --predictions_file predictions/llama31_to_${model}_${attribute}_seed${seed}.json
+        done
+    done
+done

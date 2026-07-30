@@ -1,0 +1,17 @@
+#!/bin/bash
+#SBATCH -J l31_inf
+#SBATCH --gres=gpu:a100:1
+#SBATCH --mem=90000
+
+cd  /home/mlorandi/PEFT_mod_port/
+source .venv/bin/activate
+
+seeds=(7097 4613 89723)
+models=("llama31" "llama32" "qwen38b" "qwen34b")
+for seed in "${seeds[@]}"
+do
+    for model in "${models[@]}"
+    do
+        uv run scripts/run_portability.py --step generate --seed $seed --module models/sft_llama3.1_8b_topic_seed${seed}/checkpoint-1840/ --src_model llama31 --tgt_model $model --attribute topic --dataset data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv --output outputs/topic/llama31_to_${model}_topic_seed${seed}.json
+    done
+done
