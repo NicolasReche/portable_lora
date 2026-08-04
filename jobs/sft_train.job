@@ -1,8 +1,10 @@
 #!/bin/bash
 #SBATCH -J sft_train
 #SBATCH --gres=gpu:a100:1
+#SBATCH --mem=64G
+#SBATCH --cpus-per-task=4
 
-cd  /home/mlorandi/PEFT_mod_port/
+cd /home/nreche/portable_lora/
 source .venv/bin/activate
 
 ctg_attributes=("sentiment" "topic")
