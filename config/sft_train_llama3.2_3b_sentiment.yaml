@@ -9,8 +9,8 @@ training:
   learning_rate: 1e-4
   weight_decay: 0.05
   optim: "paged_adamw_32bit"
-  fp16: false
-  bf16: true
+  fp16: true
+  bf16: false
   max_grad_norm: 1
   max_steps: 400
   warmup_ratio: 0.05
