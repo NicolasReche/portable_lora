@@ -65,15 +65,12 @@ def reward_function_v1(prompts: List[str], completions: List[str], model, tokeni
             
 
             - Definition of our CE :
-                for the sentiement task :
-                    CE_sentiment = - Loss_CE(completion_tokens | sentiment_prompt)
-                for the topic task :
-                    CE_topic = - Loss_CE(completion_tokens | topic_prompt)
-                CE = (CE_sentiment + CE_topic) / 2
+                CE = exp(-Loss_CE(completion_tokens | control_prompt))
+                (This represents the mathematical probability of generating the completion given the control tag)
 
             - Definition of our SLOR (Fluency):
-                SLOR = (ln P_LM(completion) - ln P_unigram(completion)) / length(completion)
-                Normalized: SLOR_norm = max(0.0, SLOR / 10.0)
+                Instead of the traditional slow SLOR calculation, we use a fast and robust approximation (inverse perplexity):
+                Fluency = exp(-Loss_CE(completion_tokens)) 
 
             - Definition of our Diversity:
                 distinct_n = count(unique_ngrams) / count(total_ngrams)
@@ -99,11 +96,10 @@ def reward_function_v1(prompts: List[str], completions: List[str], model, tokeni
     return rewards
 
 if __name__ == "__main__":
-    # 1. Test Dummy Strings on Diversity
     good_completion = "The sushi was fresh, delicious, and the service was fantastic!"
     bad_completion = "food food food food food food food food food"
-    print("Good Completion Diversity:", diversity_score(good_completion)) # High (~1.0)
-    print("Bad Completion Diversity:", diversity_score(bad_completion))   # Low (~0.1)
+    print("Good Completion Diversity:", diversity_score(good_completion)) # High (around 1.0)
+    print("Bad Completion Diversity:", diversity_score(bad_completion))   # Low (around 0.1)
 
     # Output verification
     assert diversity_score(good_completion) > diversity_score(bad_completion)
