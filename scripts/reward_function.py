@@ -1,9 +1,10 @@
 # Thinking about reward function
 import torch
+import math
 from typing import List
 
 def fluency_score(completion: str, model, tokenizer) -> float:
-    """Approximates normalized SLOR fluency score."""
+    """Approximates normalized SLOR fluency score"""
     if not completion.strip():
         return 0.0
         
@@ -14,12 +15,10 @@ def fluency_score(completion: str, model, tokenizer) -> float:
         outputs = model(**inputs, labels=labels)
         loss = outputs.loss.item()
         
-    # SLOR Approximation: bounded and normalized to [0, 1]
-    slor_approx = max(0.0, 10.0 - loss)
-    return slor_approx / 10.0
+    return math.exp(-loss)
 
 def control_effectiveness_score(prompt: str, completion: str, model, tokenizer):
-    """Computes CE using Negative Cross-Entropy Loss on completion tokens."""
+    """Computes CE using Negative Cross-Entropy Loss on completion tokens"""
     full_text = prompt + completion
     inputs = tokenizer(full_text, return_tensors="pt").to(model.device)
     labels = inputs["input_ids"].clone()
@@ -32,8 +31,7 @@ def control_effectiveness_score(prompt: str, completion: str, model, tokenizer):
         outputs = model(**inputs, labels=labels)
         loss = outputs.loss.item()
 
-    # Bounded negative loss between -5.0 and 0.0
-    return max(-5.0, -loss)
+    return math.exp(-loss)
 
 def compute_distinct_n(text: str, n: int):
     """Calculates the Distinct-n metric for a given text"""
@@ -106,6 +104,7 @@ if __name__ == "__main__":
     bad_completion = "food food food food food food food food food"
     print("Good Completion Diversity:", diversity_score(good_completion)) # High (~1.0)
     print("Bad Completion Diversity:", diversity_score(bad_completion))   # Low (~0.1)
+
     # Output verification
     assert diversity_score(good_completion) > diversity_score(bad_completion)
-    print("✅ Diversity Unit Test Passed!")
+    print("Diversity Unit Test Passed!")
