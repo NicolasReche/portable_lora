@@ -1,15 +1,15 @@
 #!/bin/bash
 #SBATCH -J sft_train
 #SBATCH --gres=gpu:a100:1
-#SBATCH --mem=64G
+#SBATCH --mem=128G
 #SBATCH --cpus-per-task=4
 
 cd /home/nreche/portable_lora/
 source .venv/bin/activate
 
 ctg_attributes=("sentiment" "topic")
-seeds=(7097 4613 89723)
-models=("llama3.1_8b" "llama3.2_3b" "qwen3_4b" "qwen3_8b")
+seeds=(7097)
+models=("llama3.1_8b" "llama3.2_3b")
 for attribute in "${ctg_attributes[@]}"
 do
     for seed in "${seeds[@]}"

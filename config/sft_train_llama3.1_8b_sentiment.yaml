@@ -8,7 +8,7 @@ training:
   gradient_accumulation_steps: 8
   learning_rate: 1e-4
   weight_decay: 0.05
-  optim: "paged_adamw_32bit"
+  optim: "adamw_torch"
   fp16: true
   bf16: false
   max_grad_norm: 1
