@@ -96,11 +96,40 @@ def reward_function_v1(prompts: List[str], completions: List[str], model, tokeni
     return rewards
 
 if __name__ == "__main__":
+    print("--- 1. Testing Diversity Score ---")
     good_completion = "The sushi was fresh, delicious, and the service was fantastic!"
     bad_completion = "food food food food food food food food food"
-    print("Good Completion Diversity:", diversity_score(good_completion)) # High (around 1.0)
-    print("Bad Completion Diversity:", diversity_score(bad_completion))   # Low (around 0.1)
-
-    # Output verification
+    print("Good Completion Diversity:", diversity_score(good_completion))
+    print("Bad Completion Diversity:", diversity_score(bad_completion))
     assert diversity_score(good_completion) > diversity_score(bad_completion)
-    print("Diversity Unit Test Passed!")
+    print("Diversity Unit Test Passed!\n")
+
+    print("--- 2. Testing Model-based Scores ---")
+    print("(Loading a tiny 'gpt2' model just for a quick local test without explosant la RAM...)")
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    
+    test_model_name = "gpt2"
+    tokenizer = AutoTokenizer.from_pretrained(test_model_name)
+    tokenizer.pad_token = tokenizer.eos_token
+    model = AutoModelForCausalLM.from_pretrained(test_model_name)
+    model.eval()
+
+    prompt = "[POSITIVE] Yelp [\\POSITIVE] [ANS]"
+    
+    r_ce_good = control_effectiveness_score(prompt, good_completion, model, tokenizer)
+    r_slor_good = fluency_score(good_completion, model, tokenizer)
+    print(f"\n[Good Completion]")
+    print(f"CE: {r_ce_good:.4f} | SLOR: {r_slor_good:.4f}")
+
+    r_ce_bad = control_effectiveness_score(prompt, bad_completion, model, tokenizer)
+    r_slor_bad = fluency_score(bad_completion, model, tokenizer)
+    print(f"\n[Bad Completion]")
+    print(f"CE: {r_ce_bad:.4f} | SLOR: {r_slor_bad:.4f}")
+
+    print("\n--- 3. Testing Total Reward Function ---")
+    rewards = reward_function_v1([prompt, prompt], [good_completion, bad_completion], model, tokenizer)
+    print(f"Total Reward (Good): {rewards[0]:.4f}")
+    print(f"Total Reward (Bad):  {rewards[1]:.4f}")
+    
+    assert rewards[0] > rewards[1]
+    print("\nTotal Reward Test Passed!")
