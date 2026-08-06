@@ -1,0 +1,28 @@
+#!/bin/bash
+#SBATCH -J rl_train
+#SBATCH --gres=gpu:a100:1
+#SBATCH --mem=64G
+#SBATCH --cpus-per-task=4
+
+cd /home/nreche/portable_lora/
+source .venv/bin/activate
+
+ctg_attributes=("sentiment" "topic")
+seeds=(7097) # Testing on a single seed first to verify that the RL pipeline works correctly
+models=("llama3.1_8b" "llama3.2_3b")
+
+for attribute in "${ctg_attributes[@]}"
+do
+    for seed in "${seeds[@]}"
+    do
+        for model in "${models[@]}"
+        do
+            echo "Starting RL training for $model on $attribute task (seed $seed)..."
+            uv run scripts/rl_peft/train_rl_model.py \
+                --config_path config/rl_train_${model}_${attribute}.yaml \
+                --seed $seed \
+                --model_dir models \
+                --run_name rl_${model}_${attribute}_seed${seed}
+        done
+    done
+done

@@ -60,7 +60,7 @@ def reward_function_v1(prompts: List[str], completions: List[str], model, tokeni
             - reward = Wce * CE + Wslor * SLOR + Wdiv * diversity
             With Wce > 0, Wslor > 0, Wdiv > 0, and sum(Wce, Wslor, Wdiv) = 1
             Where Wce,Wslor,Wdiv are the weigth for each reward function
-            Where CE = (sentiment + topic)/2
+            Where CE =  sentiment_CE || topic_CE
                     Diversity = (distinct_3 + distinct_2 + distinct_1) / 3
             
 
