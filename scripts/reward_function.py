@@ -111,9 +111,14 @@ if __name__ == "__main__":
     class MockTokenizer:
         def __call__(self, text, return_tensors="pt"):
             import torch
-            # We just return fake tokens of length 5 or 15
             length = 5 if text.startswith("[POSITIVE]") and "ANS" not in text else 15
-            return {"input_ids": torch.zeros((1, length), dtype=torch.long)}
+            
+            # Create a fake dictionary that supports the .to() method like a HuggingFace Tokenizer
+            class FakeBatchEncoding(dict):
+                def to(self, device):
+                    return self
+                    
+            return FakeBatchEncoding({"input_ids": torch.zeros((1, length), dtype=torch.long)})
             
     class MockOutput:
         def __init__(self, loss_val):
