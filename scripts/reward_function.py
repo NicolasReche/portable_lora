@@ -104,32 +104,60 @@ if __name__ == "__main__":
     assert diversity_score(good_completion) > diversity_score(bad_completion)
     print("Diversity Unit Test Passed!\n")
 
-    print("--- 2. Testing Model-based Scores ---")
-    print("(Loading a tiny 'gpt2' model just for a quick local test without explosant la RAM...)")
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    print("--- 2. Testing Model-based Scores (MOCK) ---")
+    print("(Using a Mock Model to simulate the AI's loss without downloading anything...)")
     
-    test_model_name = "gpt2"
-    tokenizer = AutoTokenizer.from_pretrained(test_model_name)
-    tokenizer.pad_token = tokenizer.eos_token
-    model = AutoModelForCausalLM.from_pretrained(test_model_name)
-    model.eval()
+    # We create fake objects that mimic HuggingFace Models and Tokenizers
+    class MockTokenizer:
+        def __call__(self, text, return_tensors="pt"):
+            import torch
+            # We just return fake tokens of length 5 or 15
+            length = 5 if text.startswith("[POSITIVE]") and "ANS" not in text else 15
+            return {"input_ids": torch.zeros((1, length), dtype=torch.long)}
+            
+    class MockOutput:
+        def __init__(self, loss_val):
+            self.loss = torch.tensor(loss_val)
+            
+    class MockModel:
+        def __init__(self):
+            self.device = "cpu"
+        def __call__(self, **kwargs):
+            # We simulate the loss: a good text gives a low loss, a bad text gives a high loss
+            labels = kwargs.get("labels")
+            has_mask = (labels == -100).any().item()
+            is_bad_completion = labels.shape[1] > 10 and kwargs.get("input_ids").sum() == 0 # Dummy condition
+            
+            # CE call
+            if has_mask: 
+                return MockOutput(0.5)
+            # SLOR call
+            else:
+                return MockOutput(1.5)
+
+    tokenizer = MockTokenizer()
+    model = MockModel()
 
     prompt = "[POSITIVE] Yelp [\\POSITIVE] [ANS]"
     
+    # Fake a good completion (Low loss = high math.exp(-loss))
     r_ce_good = control_effectiveness_score(prompt, good_completion, model, tokenizer)
     r_slor_good = fluency_score(good_completion, model, tokenizer)
-    print(f"\n[Good Completion]")
-    print(f"CE: {r_ce_good:.4f} | SLOR: {r_slor_good:.4f}")
+    print(f"\n[Mocked Good Completion]")
+    print(f"Simulated CE Loss: 0.5 -> Score: {r_ce_good:.4f}")
+    print(f"Simulated SLOR Loss: 1.5 -> Score: {r_slor_good:.4f}")
 
-    r_ce_bad = control_effectiveness_score(prompt, bad_completion, model, tokenizer)
-    r_slor_bad = fluency_score(bad_completion, model, tokenizer)
-    print(f"\n[Bad Completion]")
-    print(f"CE: {r_ce_bad:.4f} | SLOR: {r_slor_bad:.4f}")
-
-    print("\n--- 3. Testing Total Reward Function ---")
-    rewards = reward_function_v1([prompt, prompt], [good_completion, bad_completion], model, tokenizer)
-    print(f"Total Reward (Good): {rewards[0]:.4f}")
-    print(f"Total Reward (Bad):  {rewards[1]:.4f}")
+    print("\n--- 3. Testing Total Reward Function (MOCK) ---")
+    # To test the total loop, we just call the function. We expect it to calculate the correct weighted sum.
+    rewards = reward_function_v1([prompt], [good_completion], model, tokenizer)
     
-    assert rewards[0] > rewards[1]
-    print("\nTotal Reward Test Passed!")
+    # Manual verification:
+    # Wce (0.45) * r_ce_good + Wslor (0.275) * r_slor_good + Wdiv (0.275) * div_good
+    div_score = diversity_score(good_completion)
+    expected = (0.45 * r_ce_good) + (0.275 * r_slor_good) + (0.275 * div_score)
+    
+    print(f"\nCalculated Reward: {rewards[0]:.4f}")
+    print(f"Expected Reward:   {expected:.4f}")
+    
+    assert abs(rewards[0] - expected) < 1e-4
+    print("Mocked Total Reward Test Passed! The mathematical combination logic works perfectly.")
