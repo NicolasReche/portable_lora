@@ -10,3 +10,10 @@ ssh nreche@grove.computing.dcu.ie -J nreche@lir.adaptcentre.ie:8443
 # cat resultats_entrainement.log     -> Pour lire tout le fichier de log (le "cat truc" !)
 # tail -f resultats_entrainement.log -> Pour lire les logs en direct (Ctrl+C pour quitter)
 # scancel LE_NUMERO_DU_JOB           -> Pour annuler un entraînement
+
+
+#sbatch jobs/evaluate_base_models.job
+#sbatch jobs/evaluate_llama31_module.job
+#sbatch jobs/inference_base_models.job
+#sbatch jobs/inference_llama31_module_sentiment.job
+#sbatch jobs/inference_llama31_module_topic.job

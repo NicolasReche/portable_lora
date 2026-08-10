@@ -6,8 +6,8 @@ cd  /home/mlorandi/PEFT_mod_port/
 source .venv/bin/activate
 
 ctg_attributes=("sentiment" "topic")
-seeds=(7097 4613 89723)
-models=("llama31" "llama32" "qwen38b" "qwen34b")
+seeds=(7097)
+models=("llama31" "llama32")
 for seed in "${seeds[@]}"
 do
     for model in "${models[@]}"
