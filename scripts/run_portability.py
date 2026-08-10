@@ -75,33 +75,16 @@ logger = logging.getLogger("portability")
 MODEL_IDS = {
     "llama32": "meta-llama/Llama-3.2-3B",
     "llama31": "meta-llama/Llama-3.1-8B",
-    "qwen34b": "Qwen/Qwen3-4B",
-    "qwen38b": "Qwen/Qwen3-8B",
 }
 
 # max_offset for DP layer mapping
 MAX_OFFSET = {
     ("llama32", "llama31"): 2, ("llama31", "llama32"): 2,
-    ("qwen34b", "qwen38b"): 2, ("qwen38b", "qwen34b"): 2,
-    ("llama32", "qwen34b"): 4, ("llama31", "qwen38b"): 4,
-    ("qwen34b", "llama32"): 4, ("qwen38b", "llama31"): 4,
-    ("llama32", "qwen38b"): 4, ("llama31", "qwen34b"): 4,
-    ("qwen34b", "llama31"): 4, ("qwen38b", "llama32"): 4,
 }
 
 TRANSFER_CONDITION = {
     ("llama32", "llama31"): "same_family_diff_size",
     ("llama31", "llama32"): "same_family_diff_size",
-    ("qwen34b", "qwen38b"): "same_family_diff_size",
-    ("qwen38b", "qwen34b"): "same_family_diff_size",
-    ("llama32", "qwen34b"): "cross_family_comparable_size",
-    ("llama31", "qwen38b"): "cross_family_comparable_size",
-    ("qwen34b", "llama32"): "cross_family_comparable_size",
-    ("qwen38b", "llama31"): "cross_family_comparable_size",
-    ("llama32", "qwen38b"): "cross_family_diff_size",
-    ("llama31", "qwen34b"): "cross_family_diff_size",
-    ("qwen34b", "llama31"): "cross_family_diff_size",
-    ("qwen38b", "llama32"): "cross_family_diff_size",
 }
 
 # ---------------------------------------------------------------------------

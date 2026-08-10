@@ -38,8 +38,6 @@ logger = logging.getLogger("base_inference")
 MODEL_IDS = {
     "llama32": "meta-llama/Llama-3.2-3B",
     "llama31": "meta-llama/Llama-3.1-8B",
-    "qwen34b": "Qwen/Qwen3-4B",
-    "qwen38b": "Qwen/Qwen3-8B",
 }
 
 

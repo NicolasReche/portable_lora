@@ -3,7 +3,7 @@ import torch
 import math
 from typing import List
 
-def fluency_score(completion: str, model, tokenizer) -> float:
+def fluency_score(completion: str, model, tokenizer):
     """Approximates normalized SLOR fluency score"""
     if not completion.strip():
         return 0.0
@@ -131,7 +131,6 @@ if __name__ == "__main__":
             # We simulate the loss: a good text gives a low loss, a bad text gives a high loss
             labels = kwargs.get("labels")
             has_mask = (labels == -100).any().item()
-            is_bad_completion = labels.shape[1] > 10 and kwargs.get("input_ids").sum() == 0 # Dummy condition
             
             # CE call
             if has_mask: 
