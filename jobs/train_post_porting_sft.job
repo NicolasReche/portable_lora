@@ -1,0 +1,46 @@
+#!/bin/bash
+#SBATCH -J few_step_sft
+#SBATCH --gres=gpu:a100:1
+#SBATCH --mem=128G
+#SBATCH --cpus-per-task=4
+
+cd /home/nreche/portable_lora/
+source .venv/bin/activate
+
+ctg_attributes=("sentiment" "topic")
+seeds=(7097)
+
+# Define source -> target direction pairs
+pairs=("llama31:llama32" "llama32:llama31")
+
+for attribute in "${ctg_attributes[@]}"
+do
+    for seed in "${seeds[@]}"
+    do
+        for pair in "${pairs[@]}"
+        do
+            src_model="${pair%%:*}"
+            tgt_model="${pair##*:}"
+
+            # Step 1: Export the ported adapter
+            uv run python portability/run_portability.py \
+                --step generate \
+                --module ./models/sft_${src_model}_${attribute}_seed${seed} \
+                --src_model ${src_model} \
+                --tgt_model ${tgt_model} \
+                --attribute ${attribute} \
+                --dataset yelp \
+                --save_ported_dir ./models/ported/${src_model}_to_${tgt_model}_${attribute}_seed${seed} \
+                --output ./results/zero_shot_${src_model}_to_${tgt_model}_${attribute}_seed${seed}.json
+
+            # Step 2: Run post-porting fine-tuning (few-step)
+            uv run python portability/train_post_porting_sft.py \
+                --base_model ${tgt_model} \
+                --ported_adapter ./models/ported/${src_model}_to_${tgt_model}_${attribute}_seed${seed} \
+                --train_dataset ./data/${attribute}_train.csv \
+                --attribute ${attribute} \
+                --output_dir ./models/few_step/${src_model}_to_${tgt_model}_${attribute}_seed${seed} \
+                --seed ${seed}
+        done
+    done
+done
