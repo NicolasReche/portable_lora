@@ -9,8 +9,6 @@ source .venv/bin/activate
 
 ctg_attributes=("sentiment" "topic")
 seeds=(7097)
-
-# Define source -> target direction pairs
 pairs=("llama31:llama32" "llama32:llama31")
 
 for attribute in "${ctg_attributes[@]}"
@@ -22,25 +20,24 @@ do
             src_model="${pair%%:*}"
             tgt_model="${pair##*:}"
 
-            # Step 1: Export the ported adapter
-            uv run python scripts/run_portability.py \
-                --step generate \
-                --module ./models/sft_${src_model}_${attribute}_seed${seed} \
+            # Convert model key format for config path (e.g. llama32 -> llama3.2_3b)
+            if [ "$tgt_model" == "llama32" ]; then
+                tgt_cfg_model="llama3.2_3b"
+            else
+                tgt_cfg_model="llama3.1_8b"
+            fi
+
+            # Single call to train_post_porting_sft.py
+            uv run python scripts/train_post_porting_sft.py \
+                --config_path config/sft_train_${tgt_cfg_model}_${attribute}.yaml \
                 --src_model ${src_model} \
                 --tgt_model ${tgt_model} \
+                --module ./models/sft_${src_model}_${attribute}_seed${seed}/checkpoint-200 \
                 --attribute ${attribute} \
-                --dataset yelp \
-                --save_ported_dir ./models/ported/${src_model}_to_${tgt_model}_${attribute}_seed${seed} \
-                --output ./results/zero_shot_${src_model}_to_${tgt_model}_${attribute}_seed${seed}.json
-
-            # Step 2: Run post-porting fine-tuning (few-step)
-            uv run python scripts/train_post_porting_sft.py \
-                --base_model ${tgt_model} \
-                --ported_adapter ./models/ported/${src_model}_to_${tgt_model}_${attribute}_seed${seed} \
-                --train_dataset ./data/${attribute}_train.csv \
-                --attribute ${attribute} \
+                --seed ${seed} \
                 --output_dir ./models/few_step/${src_model}_to_${tgt_model}_${attribute}_seed${seed} \
-                --seed ${seed}
+                --test_datasets yelp \
+                --output_json ./results/few_step_${src_model}_to_${tgt_model}_${attribute}_seed${seed}.json
         done
     done
 done
