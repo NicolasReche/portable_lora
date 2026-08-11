@@ -17,3 +17,4 @@ ssh nreche@grove.computing.dcu.ie -J nreche@lir.adaptcentre.ie:8443
 #sbatch jobs/inference_base_models.job
 #sbatch jobs/inference_llama31_module_sentiment.job
 #sbatch jobs/inference_llama31_module_topic.job
+#sbatch jobs/train_post_porting_sft.job
