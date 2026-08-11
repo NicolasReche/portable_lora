@@ -95,6 +95,80 @@ def reward_function_v1(prompts: List[str], completions: List[str], model, tokeni
 
     return rewards
 
+def reward_function_v2(prompts: List[str], contrast_prompts: List[str], completions: List[str], model, tokenizer):
+    """
+    Reward function V2 (Contrastive Control):
+        reward = Wce * R_control_contrastive + Wslor * R_fluency + Wdiv * R_diversity
+
+    Changes from V1:
+        1. Control Reward (R_control_contrastive):
+           - No longer raw exp(-Loss_CE).
+           - R_control = sigmoid(log P(completion | target_prompt) - log P(completion | contrast_prompt))
+           - Isolates true attribute alignment by canceling out general token frequency/fluency biases.
+
+        
+    Same form V1:
+        2. Fluency (Proxy):
+           - Fluency = exp(-Loss_CE(completion_tokens | target_prompt)) 
+           - Measures basic text probability under the base model.
+
+        3. Diversity:
+           - Diversity = (distinct_1 + distinct_2 + distinct_3) / 3
+
+        4. Weights:
+           - Wce = 0.475
+           - Wslor = 0.275
+           - Wdiv =  0.275
+    """
+    Wce, Wslor, Wdiv = 0.475, 0.275, 0.275
+    rewards = []
+
+    for prompt, completion in zip(prompts, completions):
+        r_ce = control_effectiveness_score(prompt, completion, model, tokenizer)
+        r_slor = fluency_score(completion, model, tokenizer)
+        r_div = diversity_score(completion)
+
+        total_reward = Wce * r_ce + Wslor * r_slor + Wdiv * r_div
+        rewards.append(float(total_reward))
+
+    return rewards
+
+def reward_function_v3(prompts: List[str], contrast_prompts: List[str], completions: List[str], model, tokenizer, unigram_log_probs: Dict[int, float]):
+    """
+    Reward function V3 (Contrastive Control + SLOR Fluency):
+        reward = Wce * R_control_contrastive + Wslor * R_SLOR + Wdiv * R_diversity
+
+    Changes from V2:
+        1. Fluency (SLOR):
+           - Replaces the inverse perplexity proxy with true SLOR normalization.
+           - SLOR = (1/N) * (log P_LM(x) - log P_unigram(x))
+           - Prevents penalizing rare, complex, or domain-specific words.
+
+    Same as V2:
+        2. Control Reward (R_control_contrastive):
+           - R_control = sigmoid(log P(completion | target_prompt) - log P(completion | contrast_prompt))
+
+        3. Diversity:
+           - Diversity = (distinct_1 + distinct_2 + distinct_3) / 3
+
+        4. Weights:
+           - Wce = 0.475
+           - Wslor = 0.275
+           - Wdiv = 0.275
+    """
+    Wce, Wslor, Wdiv = 0.475, 0.275, 0.275
+    rewards = []
+
+    for prompt, completion in zip(prompts, completions):
+        r_ce = control_effectiveness_score(prompt, completion, model, tokenizer)
+        r_slor = fluency_score(completion, model, tokenizer)
+        r_div = diversity_score(completion)
+
+        total_reward = Wce * r_ce + Wslor * r_slor + Wdiv * r_div
+        rewards.append(float(total_reward))
+
+    return rewards
+
 if __name__ == "__main__":
     print("--- 1. Testing Diversity Score ---")
     good_completion = "The sushi was fresh, delicious, and the service was fantastic!"
