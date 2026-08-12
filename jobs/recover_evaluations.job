@@ -11,7 +11,7 @@ source .venv/bin/activate
 echo "============================================================"
 echo "1. Sentiment: LLaMA 3.1 -> LLaMA 3.2"
 echo "============================================================"
-uv run python scripts/run_portability.py \
+python scripts/run_portability.py \
     --step generate \
     --module ./models/few_step/llama31_to_llama32_sentiment_seed7097/checkpoint-200 \
     --tgt_model llama32 \
@@ -22,7 +22,7 @@ uv run python scripts/run_portability.py \
 echo "============================================================"
 echo "2. Sentiment: LLaMA 3.2 -> LLaMA 3.1"
 echo "============================================================"
-uv run python scripts/run_portability.py \
+python scripts/run_portability.py \
     --step generate \
     --module ./models/few_step/llama32_to_llama31_sentiment_seed7097/checkpoint-200 \
     --tgt_model llama31 \
@@ -33,7 +33,7 @@ uv run python scripts/run_portability.py \
 echo "============================================================"
 echo "3. Topic: LLaMA 3.1 -> LLaMA 3.2"
 echo "============================================================"
-uv run python scripts/run_portability.py \
+python scripts/run_portability.py \
     --step generate \
     --module ./models/few_step/llama31_to_llama32_topic_seed7097/checkpoint-200 \
     --tgt_model llama32 \
@@ -44,7 +44,7 @@ uv run python scripts/run_portability.py \
 echo "============================================================"
 echo "4. Topic: LLaMA 3.2 -> LLaMA 3.1"
 echo "============================================================"
-uv run python scripts/run_portability.py \
+python scripts/run_portability.py \
     --step generate \
     --module ./models/few_step/llama32_to_llama31_topic_seed7097/checkpoint-200 \
     --tgt_model llama31 \

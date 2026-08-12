@@ -43,7 +43,7 @@ do
 
             module_dir="./models/sft_${src_path_model}_${attribute}_seed${seed}/${ckpt}"
 
-            uv run python scripts/train_post_porting_sft.py \
+            python scripts/train_post_porting_sft.py \
                 --config_path config/sft_train_${tgt_cfg_model}_${attribute}.yaml \
                 --src_model ${src_model} \
                 --tgt_model ${tgt_model} \
