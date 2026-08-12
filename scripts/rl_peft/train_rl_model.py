@@ -10,19 +10,27 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import PeftModel, prepare_model_for_kbit_training
 from reward_function import reward_function_v1
 
+import random
+
 def sample_to_prompt(sample: dict, attribute: str='sentiment'):
     """
-    Extract only the prompt for the given sample and attribute (GRPO training)
-
-    Args:
-        sample (dict): The sample to extract the prompt from
-        attribute (str): The attribute to extract the prompt for
-
-    Returns:
-        dict: The formatted prompt for the given sample and attribute
+    Extract the prompt for GRPO training and generate a contrast prompt.
     """
     prompt = f"[{attribute.upper()}] {sample['control']} [\\{attribute.upper()}] [ANS] {sample['input']}".strip()
-    return {'prompt': prompt}
+    
+    if attribute.lower() == 'sentiment':
+        contrast_control = "Negative" if sample['control'].lower() == "positive" else "Positive"
+    elif attribute.lower() == 'topic':
+        topics = ["World", "Sports", "Business", "Sci/Tech"]
+        if sample['control'] in topics:
+            topics.remove(sample['control'])
+        contrast_control = random.choice(topics)
+    else:
+        contrast_control = "None"
+        
+    contrast_prompt = f"[{attribute.upper()}] {contrast_control} [\\{attribute.upper()}] [ANS] {sample['input']}".strip()
+    
+    return {'prompt': prompt, 'contrast_prompts': contrast_prompt}
 
 
 if __name__ == "__main__":

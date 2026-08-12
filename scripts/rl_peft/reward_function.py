@@ -1,7 +1,7 @@
 # Thinking about reward function
 import torch
 import math
-from typing import List
+from typing import List, Dict
 
 def fluency_score(completion: str, model, tokenizer):
     """Approximates normalized SLOR fluency score"""
@@ -95,6 +95,35 @@ def reward_function_v1(prompts: List[str], completions: List[str], model, tokeni
 
     return rewards
 
+def contrastive_control_effectiveness_score(target_prompt: str, contrast_prompt: str, completion: str, model, tokenizer):
+    """
+    Computes contrastive control score:
+    sigmoid(log P(completion | target_prompt) - log P(completion | contrast_prompt))
+    """
+    def get_log_prob(prompt):
+        full_text = prompt + completion
+        inputs = tokenizer(full_text, return_tensors="pt").to(model.device)
+        labels = inputs["input_ids"].clone()
+        
+        prompt_len = tokenizer(prompt, return_tensors="pt")["input_ids"].shape[1]
+        labels[:, :prompt_len] = -100
+
+        with torch.no_grad():
+            outputs = model(**inputs, labels=labels)
+            loss = outputs.loss.item()
+            num_tokens = labels.shape[1] - prompt_len
+            
+        return -loss * num_tokens
+
+    log_p_target = get_log_prob(target_prompt)
+    log_p_contrast = get_log_prob(contrast_prompt)
+    
+    diff = log_p_target - log_p_contrast
+
+    # Avoid overflow
+    diff = max(min(diff, 100.0), -100.0)
+    return 1.0 / (1.0 + math.exp(-diff))
+
 def reward_function_v2(prompts: List[str], contrast_prompts: List[str], completions: List[str], model, tokenizer):
     """
     Reward function V2 (Contrastive Control):
@@ -116,15 +145,15 @@ def reward_function_v2(prompts: List[str], contrast_prompts: List[str], completi
            - Diversity = (distinct_1 + distinct_2 + distinct_3) / 3
 
         4. Weights:
-           - Wce = 0.475
+           - Wce = 0.45
            - Wslor = 0.275
            - Wdiv =  0.275
     """
-    Wce, Wslor, Wdiv = 0.475, 0.275, 0.275
+    Wce, Wslor, Wdiv = 0.45, 0.275, 0.275
     rewards = []
 
-    for prompt, completion in zip(prompts, completions):
-        r_ce = control_effectiveness_score(prompt, completion, model, tokenizer)
+    for prompt, contrast_prompt, completion in zip(prompts, contrast_prompts, completions):
+        r_ce = contrastive_control_effectiveness_score(prompt, contrast_prompt, completion, model, tokenizer)
         r_slor = fluency_score(completion, model, tokenizer)
         r_div = diversity_score(completion)
 
@@ -132,6 +161,35 @@ def reward_function_v2(prompts: List[str], contrast_prompts: List[str], completi
         rewards.append(float(total_reward))
 
     return rewards
+
+def slor_score(completion: str, model, tokenizer, unigram_log_probs: Dict[int, float]):
+    """
+    Computes true SLOR using unigram_log_probs
+    SLOR = (1/N) * (log P_LM(x) - log P_unigram(x))
+    """
+    if not completion.strip():
+        return 0.0
+        
+    inputs = tokenizer(completion, return_tensors="pt").to(model.device)
+    labels = inputs["input_ids"].clone()
+    
+    with torch.no_grad():
+        outputs = model(**inputs, labels=labels)
+        loss = outputs.loss.item()
+        
+    input_ids = inputs["input_ids"][0].tolist()
+    N = len(input_ids)
+    
+    # Calculate log P_unigram(x)
+    # Some tokens might not be in unigram_log_probs, we can default to a small value e.g., -20.0
+    log_p_unigram = sum(unigram_log_probs.get(token_id, -20.0) for token_id in input_ids)
+    
+    log_p_lm = -loss * N
+    
+    # SLOR
+    slor = (log_p_lm - log_p_unigram) / N
+    
+    return slor
 
 def reward_function_v3(prompts: List[str], contrast_prompts: List[str], completions: List[str], model, tokenizer, unigram_log_probs: Dict[int, float]):
     """
@@ -152,16 +210,16 @@ def reward_function_v3(prompts: List[str], contrast_prompts: List[str], completi
            - Diversity = (distinct_1 + distinct_2 + distinct_3) / 3
 
         4. Weights:
-           - Wce = 0.475
+           - Wce = 0.45
            - Wslor = 0.275
            - Wdiv = 0.275
     """
-    Wce, Wslor, Wdiv = 0.475, 0.275, 0.275
+    Wce, Wslor, Wdiv = 0.45, 0.275, 0.275
     rewards = []
 
-    for prompt, completion in zip(prompts, completions):
-        r_ce = control_effectiveness_score(prompt, completion, model, tokenizer)
-        r_slor = fluency_score(completion, model, tokenizer)
+    for prompt, contrast_prompt, completion in zip(prompts, contrast_prompts, completions):
+        r_ce = contrastive_control_effectiveness_score(prompt, contrast_prompt, completion, model, tokenizer)
+        r_slor = slor_score(completion, model, tokenizer, unigram_log_probs)
         r_div = diversity_score(completion)
 
         total_reward = Wce * r_ce + Wslor * r_slor + Wdiv * r_div

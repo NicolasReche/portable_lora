@@ -1,0 +1,9 @@
+#!/bin/bash
+#SBATCH -J analyze_results
+#SBATCH --cpus-per-task=1
+#SBATCH -o logs/analyze_%j.out
+
+cd /home/nreche/portable_lora/
+source .venv/bin/activate
+uv run python scripts/analyze_results.py > analysis_summary.txt
+cat analysis_summary.txt

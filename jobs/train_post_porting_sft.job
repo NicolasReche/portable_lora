@@ -7,7 +7,7 @@
 cd /home/nreche/portable_lora/
 source .venv/bin/activate
 
-ctg_attributes=("sentiment" "topic")
+ctg_attributes=("sentiment")
 seeds=(7097)
 pairs=("llama31:llama32" "llama32:llama31")
 
@@ -16,10 +16,10 @@ do
     # Set the checkpoint step based on attribute training duration
     if [ "$attribute" == "sentiment" ]; then
         ckpt="checkpoint-400"
-        test_csv="./data/yelp_test.csv"
+        test_csv="data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv"
     else
         ckpt="checkpoint-1840"
-        test_csv="./data/agnews_test.csv"
+        test_csv="data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv"
     fi
 
     for seed in "${seeds[@]}"

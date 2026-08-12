@@ -1,0 +1,55 @@
+#!/bin/bash
+#SBATCH -J recover_evals
+#SBATCH --gres=gpu:a100:1
+#SBATCH --mem=90G
+#SBATCH --cpus-per-task=4
+#SBATCH -o logs/recover_evals_%j.out
+
+cd /home/nreche/portable_lora/
+source .venv/bin/activate
+
+echo "============================================================"
+echo "1. Sentiment: LLaMA 3.1 -> LLaMA 3.2"
+echo "============================================================"
+uv run python scripts/run_portability.py \
+    --step generate \
+    --module ./models/few_step/llama31_to_llama32_sentiment_seed7097/checkpoint-200 \
+    --tgt_model llama32 \
+    --attribute sentiment \
+    --dataset data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv \
+    --output ./results/few_step_llama31_to_llama32_sentiment_seed7097.json
+
+echo "============================================================"
+echo "2. Sentiment: LLaMA 3.2 -> LLaMA 3.1"
+echo "============================================================"
+uv run python scripts/run_portability.py \
+    --step generate \
+    --module ./models/few_step/llama32_to_llama31_sentiment_seed7097/checkpoint-200 \
+    --tgt_model llama31 \
+    --attribute sentiment \
+    --dataset data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv \
+    --output ./results/few_step_llama32_to_llama31_sentiment_seed7097.json
+
+echo "============================================================"
+echo "3. Topic: LLaMA 3.1 -> LLaMA 3.2"
+echo "============================================================"
+uv run python scripts/run_portability.py \
+    --step generate \
+    --module ./models/few_step/llama31_to_llama32_topic_seed7097/checkpoint-200 \
+    --tgt_model llama32 \
+    --attribute topic \
+    --dataset data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv \
+    --output ./results/few_step_llama31_to_llama32_topic_seed7097.json
+
+echo "============================================================"
+echo "4. Topic: LLaMA 3.2 -> LLaMA 3.1"
+echo "============================================================"
+uv run python scripts/run_portability.py \
+    --step generate \
+    --module ./models/few_step/llama32_to_llama31_topic_seed7097/checkpoint-200 \
+    --tgt_model llama31 \
+    --attribute topic \
+    --dataset data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv \
+    --output ./results/few_step_llama32_to_llama31_topic_seed7097.json
+
+echo "Toutes les générations sont terminées !"

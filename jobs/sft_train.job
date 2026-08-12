@@ -7,7 +7,7 @@
 cd /home/nreche/portable_lora/
 source .venv/bin/activate
 
-ctg_attributes=("sentiment" "topic")
+ctg_attributes=("sentiment")
 seeds=(7097)
 models=("llama3.1_8b" "llama3.2_3b")
 for attribute in "${ctg_attributes[@]}"

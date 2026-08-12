@@ -2,7 +2,7 @@
 #SBATCH -J base_eval
 #SBATCH --gres=gpu:rtxa6000:1
 
-cd  /home/mlorandi/PEFT_mod_port/
+cd /home/nreche/portable_lora/
 source .venv/bin/activate
 
 ctg_attributes=("sentiment" "topic")
@@ -14,7 +14,7 @@ do
     do
         for attribute in "${ctg_attributes[@]}"
         do
-            uv run scripts/main.py --config evaluate_${attribute}.yaml --seed $seed --output_file outputs/base_${model}_${attribute}_seed${seed}.json --predictions_file predictions/base_${model}_${attribute}_seed${seed}.json
+            uv run scripts/main_eval.py --config config/evaluate_${attribute}.yaml --seed $seed --output_file outputs/base_${model}_${attribute}_seed${seed}.json --predictions_file predictions/base_${model}_${attribute}_seed${seed}.json
         done
     done
 done

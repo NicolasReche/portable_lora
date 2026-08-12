@@ -2,10 +2,10 @@
 #SBATCH -J base_inf
 #SBATCH --gres=gpu:a100:1
 
-cd  /home/mlorandi/PEFT_mod_port/
+cd /home/nreche/portable_lora/
 source .venv/bin/activate
 
-ctg_attributes=("sentiment" "topic")
+ctg_attributes=("sentiment")
 seeds=(7097)
 models=("llama31" "llama32")
 for seed in "${seeds[@]}"
