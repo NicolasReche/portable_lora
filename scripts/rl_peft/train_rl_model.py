@@ -8,7 +8,7 @@ from datasets import load_dataset
 from trl import GRPOTrainer, GRPOConfig
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import PeftModel, prepare_model_for_kbit_training
-from reward_function import reward_function_v1
+from reward_function import reward_function_v1, reward_function_v2, reward_function_v3
 
 import random
 
@@ -39,6 +39,7 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--model_dir', type=str, default='models/')
     parser.add_argument('--run_name', type=str, default='sft_training_run')
+    parser.add_argument('--reward_version', type=str, default='v1', choices=['v1', 'v2', 'v3'], help='Reward function version to use')
     args = parser.parse_args()
 
     with open(args.config_path, 'r', encoding='utf-8') as f:
@@ -186,13 +187,20 @@ if __name__ == "__main__":
         run_name=args.run_name,  # name of the W&B run (optional)
     )
 
+    if args.reward_version == 'v1':
+        selected_reward_func = reward_function_v1
+    elif args.reward_version == 'v2':
+        selected_reward_func = reward_function_v2
+    else:
+        selected_reward_func = reward_function_v3
+
     trainer = GRPOTrainer(
         model=model,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         processing_class=tokenizer,
         args=train_args,
-        reward_funcs=[reward_function_v1],
+        reward_funcs=[selected_reward_func],
         
     )
 

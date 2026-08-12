@@ -17,12 +17,16 @@ do
     do
         for model in "${models[@]}"
         do
-            echo "Starting RL training for $model on $attribute task (seed $seed)..."
-            uv run scripts/rl_peft/train_rl_model.py \
-                --config_path config/rl_train_${model}_${attribute}.yaml \
-                --seed $seed \
-                --model_dir models \
-                --run_name rl_${model}_${attribute}_seed${seed}
+            for version in "v1" "v2" "v3"
+            do
+                echo "Starting RL training for $model on $attribute task (seed $seed, reward $version)..."
+                python scripts/rl_peft/train_rl_model.py \
+                    --config_path config/rl_train_${model}_${attribute}.yaml \
+                    --seed $seed \
+                    --model_dir models \
+                    --reward_version $version \
+                    --run_name rl_${model}_${attribute}_${version}_seed${seed}
+            done
         done
     done
 done
