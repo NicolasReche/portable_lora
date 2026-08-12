@@ -169,6 +169,15 @@ def reward_function_v3(prompts: List[str], contrast_prompts: List[str], completi
 
     return rewards
 
+
+'''
+Potential reward function V4:
+    - Diversity : 
+        - Penalizing the repetition
+        - Compute the distribution of n-grams
+
+'''
+
 if __name__ == "__main__":
     print("--- 1. Testing Diversity Score ---")
     good_completion = "The sushi was fresh, delicious, and the service was fantastic!"
