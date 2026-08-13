@@ -12,6 +12,6 @@ for seed in "${seeds[@]}"
 do
     for model in "${models[@]}"
     do
-        uv run scripts/run_portability.py --step generate --seed $seed --module models/sft_llama3.1_8b_topic_seed${seed}/checkpoint-1840/ --src_model llama31 --tgt_model $model --attribute topic --dataset data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv --output outputs/topic/llama31_to_${model}_topic_seed${seed}.json
+        python scripts/run_portability.py --step generate --seed $seed --module models/sft_llama3.1_8b_topic_seed${seed}/checkpoint-1840/ --src_model llama31 --tgt_model $model --attribute topic --dataset data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv --output outputs/topic/llama31_to_${model}_topic_seed${seed}.json
     done
 done

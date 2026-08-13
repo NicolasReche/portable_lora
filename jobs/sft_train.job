@@ -16,7 +16,7 @@ do
     do
         for model in "${models[@]}"
         do
-	        uv run scripts/train_sft_model.py --config_path config/sft_train_${model}_${attribute}.yaml --seed $seed --model_dir models --run_name sft_${model}_${attribute}_seed${seed}
+	        python scripts/train_sft_model.py --config_path config/sft_train_${model}_${attribute}.yaml --seed $seed --model_dir models --run_name sft_${model}_${attribute}_seed${seed}
         done
     done
 done

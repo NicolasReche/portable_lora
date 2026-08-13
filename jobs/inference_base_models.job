@@ -14,7 +14,7 @@ do
     do
         for attribute in "${ctg_attributes[@]}"
         do
-            uv run scripts/base_inference.py --seed $seed --tgt_model $model --attribute $attribute --dataset data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv --output outputs/base_${model}_${attribute}_seed${seed}.json
+            python scripts/base_inference.py --seed $seed --tgt_model $model --attribute $attribute --dataset data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv --output outputs/base_${model}_${attribute}_seed${seed}.json
         done
     done
 done

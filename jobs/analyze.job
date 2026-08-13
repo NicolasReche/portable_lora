@@ -5,5 +5,5 @@
 
 cd /home/nreche/portable_lora/
 source .venv/bin/activate
-uv run python scripts/analyze_results.py > analysis_summary.txt
+python python scripts/analyze_results.py > analysis_summary.txt
 cat analysis_summary.txt
