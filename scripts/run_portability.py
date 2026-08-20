@@ -166,64 +166,97 @@ def step_verify(module_path: str):
 def step_cka(
     src_model_key: str,
     tgt_model_key: str,
+    dataset: str = "yelp",
     cka_dir: str = "./cka_cache",
     n_batches: int = 32,
-    batch_size: int = 8,
+    batch_size: int = 4,
     device: str = "cuda",
-):
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+) -> str:
+    import gc
+    from cka_layer_mapping import ActivationCollector, _get_transformer_layers, cka_minibatch
+    from transformers import AutoTokenizer, AutoModelForCausalLM
     from torch.utils.data import DataLoader
-    from datasets import load_dataset
-    from cka_layer_mapping import compute_cka_matrix
 
-    # Canonical storage order: alphabetical
-    a, b    = sorted([src_model_key, tgt_model_key])
     cka_path = _cka_path(src_model_key, tgt_model_key, cka_dir)
-
     if Path(cka_path).exists():
         logger.info(f"CKA already exists: {cka_path}")
         return cka_path
 
     os.makedirs(cka_dir, exist_ok=True)
-
-    calib_texts = load_dataset("wikitext", "wikitext-2-raw-v1",
-                               split="train")["text"]
-    calib_texts = [t for t in calib_texts if len(t.strip()) > 20][:256]
-
-    # Always compute with models in alphabetical order so the stored matrix
-    # is unambiguously S[a_layers, b_layers] where a < b alphabetically.
-    # _load_cka then transposes if the caller wants (b, a) direction.
     a, b = sorted([src_model_key, tgt_model_key])
-    logger.info(f"Computing CKA: {a} (rows) ↔ {b} (cols)")
+    logger.info(f"Computing CKA sequentially on {device}: {a} (rows) ↔ {b} (cols)")
 
-    tok = AutoTokenizer.from_pretrained(MODEL_IDS[a])
-    tok.padding_side = "left"
-    if tok.pad_token is None:
-        tok.pad_token = tok.eos_token
+    from datasets import load_dataset
+    d_name = dataset[0] if isinstance(dataset, list) else dataset
+    if d_name == "yelp" or "yelp" in d_name:
+        ds = load_dataset("yelp_review_full", split="train")
+        calib_texts = [ex["text"] for ex in ds.select(range(min(len(ds), n_batches * batch_size * 4)))]
+    else:
+        try:
+            ds = load_dataset(d_name, split="train")
+            col = "text" if "text" in ds.column_names else ds.column_names[0]
+            calib_texts = [ex[col] for ex in ds.select(range(min(len(ds), n_batches * batch_size * 4)))]
+        except Exception:
+            calib_texts = ["This is a sample sentence for computing hidden layer representations."] * (n_batches * batch_size * 2)
 
-    def collate(batch):
-        enc = tok(batch, return_tensors="pt", padding=True,
-                  truncation=True, max_length=256)
-        return {"input_ids": enc["input_ids"],
-                "attention_mask": enc["attention_mask"]}
+    def extract_activations(model_key):
+        tok = AutoTokenizer.from_pretrained(MODEL_IDS[model_key])
+        tok.padding_side = "left"
+        if tok.pad_token is None:
+            tok.pad_token = tok.eos_token
 
-    loader = DataLoader(calib_texts, batch_size=batch_size,
-                        collate_fn=collate, shuffle=False)
+        def collate(batch):
+            enc = tok(batch, return_tensors="pt", padding=True, truncation=True, max_length=256)
+            return {"input_ids": enc["input_ids"], "attention_mask": enc["attention_mask"]}
 
-    model_a = AutoModelForCausalLM.from_pretrained(
-        MODEL_IDS[a], torch_dtype=torch.float16, device_map=device)
-    model_b = AutoModelForCausalLM.from_pretrained(
-        MODEL_IDS[b], torch_dtype=torch.float16, device_map=device)
+        loader = DataLoader(calib_texts, batch_size=batch_size, collate_fn=collate, shuffle=False)
+        logger.info(f"Loading {model_key} onto {device}...")
+        model = AutoModelForCausalLM.from_pretrained(
+            MODEL_IDS[model_key],
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+            low_cpu_mem_usage=True
+        )
+        model.eval()
 
-    # S[i, j] = CKA(layer_i_of_a, layer_j_of_b)
-    S = compute_cka_matrix(model_a, model_b, loader,
-                            n_batches=n_batches, device=device)
+        layers = _get_transformer_layers(model)
+        collector = ActivationCollector(layers)
+        batches_run = 0
+        with torch.no_grad():
+            for batch in loader:
+                input_ids = batch["input_ids"].to(device)
+                attention_mask = batch["attention_mask"].to(device)
+                model(input_ids=input_ids, attention_mask=attention_mask)
+                batches_run += 1
+                if batches_run >= n_batches:
+                    break
+        collector.remove_hooks()
+        del model
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        return collector.activations
+
+    acts_a = extract_activations(a)
+    acts_b = extract_activations(b)
+
+    logger.info("Computing pairwise CKA similarity matrix...")
+    n_a = len(acts_a)
+    n_b = len(acts_b)
+    S = torch.zeros((n_a, n_b), dtype=torch.float32)
+
+    for i in range(n_a):
+        list_a = acts_a[i]
+        for j in range(n_b):
+            list_b = acts_b[j]
+            cka_vals = []
+            for k in range(min(len(list_a), len(list_b))):
+                cka_vals.append(cka_minibatch(list_a[k], list_b[k]))
+            if cka_vals:
+                S[i, j] = torch.stack(cka_vals).mean().item()
+
     torch.save(S, cka_path)
-    logger.info(f"Saved: {cka_path}  shape={S.shape}  "
-                f"(rows={a}, cols={b})")
-
-    del model_a, model_b
-    torch.cuda.empty_cache()
+    logger.info(f"Saved: {cka_path}  shape={S.shape}  (rows={a}, cols={b})")
     return cka_path
 
 

@@ -1,3 +1,4 @@
+from functools import partial
 import os
 import argparse
 import yaml
@@ -8,7 +9,7 @@ from datasets import load_dataset
 from trl import GRPOTrainer, GRPOConfig
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import PeftModel, prepare_model_for_kbit_training
-from reward_function import reward_function_v1, reward_function_v2, reward_function_v3
+from reward_function import reward_function_v1, reward_function_v2, reward_function_v2_1, reward_function_v3, reward_function_v4
 
 import random
 
@@ -39,7 +40,7 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--model_dir', type=str, default='models/')
     parser.add_argument('--run_name', type=str, default='sft_training_run')
-    parser.add_argument('--reward_version', type=str, default='v1', choices=['v1', 'v2', 'v3'], help='Reward function version to use')
+    parser.add_argument('--reward_version', type=str, default='v1', choices=['v1', 'v2', 'v2_1', 'v3', 'v4'], help='Reward function version to use')
     args = parser.parse_args()
 
     with open(args.config_path, 'r', encoding='utf-8') as f:
@@ -179,20 +180,29 @@ if __name__ == "__main__":
         save_strategy=config['training']['save_strategy'],
         save_total_limit=config['training']['save_total_limit'],
         save_steps=config['training']['save_steps'],
-        eval_strategy=config['training']['eval_strategy'],
-        eval_steps=config['training']['eval_steps'],    # how often to evaluate
+        eval_strategy=config['training'].get('eval_strategy', 'no'),
+        eval_steps=config['training'].get('eval_steps', None),    # how often to evaluate
         logging_strategy=config['training']['logging_strategy'],
         logging_steps=config['training']['logging_steps'],  # how often to log to W&B
         report_to="wandb",  # enable logging to W&B
         run_name=args.run_name,  # name of the W&B run (optional)
     )
-
     if args.reward_version == 'v1':
-        selected_reward_func = reward_function_v1
+        def selected_reward_func(prompts, completions, **kwargs):
+            return reward_function_v1(prompts=prompts, completions=completions, model=model, tokenizer=tokenizer, **kwargs)
+        selected_reward_func.__name__ = 'reward_function_v1'
     elif args.reward_version == 'v2':
-        selected_reward_func = reward_function_v2
+        def selected_reward_func(prompts, completions, **kwargs):
+            return reward_function_v2(prompts=prompts, completions=completions, model=model, tokenizer=tokenizer, **kwargs)
+        selected_reward_func.__name__ = 'reward_function_v2'
+    elif args.reward_version == 'v2_1':
+        def selected_reward_func(prompts, completions, **kwargs):
+            return reward_function_v2_1(prompts=prompts, completions=completions, model=model, tokenizer=tokenizer, **kwargs)
+        selected_reward_func.__name__ = 'reward_function_v2_1'
     else:
-        selected_reward_func = reward_function_v3
+        def selected_reward_func(prompts, completions, **kwargs):
+            return reward_function_v3(prompts=prompts, completions=completions, model=model, tokenizer=tokenizer, **kwargs)
+        selected_reward_func.__name__ = 'reward_function_v3'   
 
     trainer = GRPOTrainer(
         model=model,

@@ -1,0 +1,21 @@
+#!/bin/bash
+#SBATCH -J eval_identity
+#SBATCH --gres=gpu:rtxa6000:1
+#SBATCH --mem=32G
+#SBATCH -o logs/eval_identity_%j.out
+
+cd /home/nreche/portable_lora/
+source .venv/bin/activate
+mkdir -p predictions logs
+
+for m in llama31 llama32; do
+    f="outputs/identity_${m}_sentiment_seed7097.json"
+    p="predictions/identity_${m}_sentiment_seed7097.json"
+    if [ -f "$f" ]; then
+        echo "Evaluating $f ..."
+        python scripts/main_eval.py --config config/evaluate_sentiment.yaml --seed 7097 --output_file "$f" --predictions_file "$p"
+    fi
+done
+
+echo "=== Summary ==="
+python scripts/analyze_results.py

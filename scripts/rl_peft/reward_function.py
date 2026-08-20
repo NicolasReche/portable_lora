@@ -1,3 +1,4 @@
+from collections import Counter
 # Thinking about reward function
 import torch
 import math
@@ -54,7 +55,39 @@ def diversity_score(completion: str):
     d3 = compute_distinct_n(completion, 3)
     return (d1 + d2 + d3) / 3.0
 
-def reward_function_v1(prompts: List[str], completions: List[str], model, tokenizer):
+def compute_normalized_shannon_entropy(text: str, n: int):
+    """Calculates the Normalized Shannon Entropy for n-grams in a text"""
+    tokens = text.strip().split()        
+    if len(tokens) < n: return 0.0
+
+    limit = len(tokens) - n + 1
+    ngrams = []
+    for i in range(limit):
+        ngrams.append(tuple(tokens[i : i + n]))
+
+    total_ngrams = len(ngrams)
+    counts = Counter(ngrams)
+    K = len(counts)
+    
+    if K <= 1:
+        return 0.0
+        
+    H = 0.0
+    for count in counts.values():
+        p_i = count / total_ngrams
+        H -= p_i * math.log(p_i)
+        
+    return H / math.log(K)
+
+def normalized_shannon_diversity_score(completion: str):
+    """Averages normalized Shannon entropy for unigrams, bigrams, and trigrams"""
+    h1 = compute_normalized_shannon_entropy(completion, 1)
+    h2 = compute_normalized_shannon_entropy(completion, 2)
+    h3 = compute_normalized_shannon_entropy(completion, 3)
+    return (h1 + h2 + h3) / 3.0
+
+
+def reward_function_v1(prompts: List[str], completions: List[str], model, tokenizer, **kwargs):
     """
     Reward function design :
             - reward = Wce * CE + Wslor * SLOR + Wdiv * diversity
@@ -124,7 +157,7 @@ def contrastive_control_effectiveness_score(target_prompt: str, contrast_prompt:
     diff = max(min(diff, 100.0), -100.0)
     return 1.0 / (1.0 + math.exp(-diff))
 
-def reward_function_v2(prompts: List[str], contrast_prompts: List[str], completions: List[str], model, tokenizer):
+def reward_function_v2(prompts: List[str], contrast_prompts: List[str], completions: List[str], model, tokenizer, **kwargs):
     """
     Reward function V2 (Contrastive Control):
         reward = Wce * R_control_contrastive + Wslor * R_fluency + Wdiv * R_diversity
@@ -191,7 +224,7 @@ def slor_score(completion: str, model, tokenizer, unigram_log_probs: Dict[int, f
     
     return slor
 
-def reward_function_v3(prompts: List[str], contrast_prompts: List[str], completions: List[str], model, tokenizer, unigram_log_probs: Dict[int, float]):
+def reward_function_v3(prompts: List[str], contrast_prompts: List[str], completions: List[str], model, tokenizer, unigram_log_probs: Dict[int, float], **kwargs):
     """
     Reward function V3 (Contrastive Control + SLOR Fluency):
         reward = Wce * R_control_contrastive + Wslor * R_SLOR + Wdiv * R_diversity
@@ -306,3 +339,70 @@ if __name__ == "__main__":
     
     assert abs(rewards[0] - expected) < 1e-4
     print("Mocked Total Reward Test Passed! The mathematical combination logic works perfectly.")
+
+def contrastive_control_normalized_score(target_prompt: str, contrast_prompt: str, completion: str, model, tokenizer):
+    """
+    Computes per-token length-normalized contrastive control score:
+    sigmoid(mean_loss_contrast - mean_loss_target)
+    """
+    def get_mean_loss(prompt):
+        full_text = prompt + completion
+        inputs = tokenizer(full_text, return_tensors="pt").to(model.device)
+        labels = inputs["input_ids"].clone()
+
+        prompt_len = tokenizer(prompt, return_tensors="pt")["input_ids"].shape[1]
+        labels[:, :prompt_len] = -100
+
+        with torch.no_grad():
+            outputs = model(**inputs, labels=labels)
+            mean_loss = outputs.loss.item()
+
+        return mean_loss
+
+    loss_target = get_mean_loss(target_prompt)
+    loss_contrast = get_mean_loss(contrast_prompt)
+
+    # Normalized contrastive margin: positive when target loss < contrast loss
+    diff = loss_contrast - loss_target
+    diff = max(min(diff, 100.0), -100.0)
+    return 1.0 / (1.0 + math.exp(-diff))
+
+
+def reward_function_v2_1(prompts: List[str], contrast_prompts: List[str], completions: List[str], model, tokenizer, **kwargs):
+    """
+    Reward function V2_1 (Length-Normalized Contrastive Control):
+    reward = Wce * R_control_normalized + Wslor * R_fluency + Wdiv * R_diversity
+    """
+    Wce, Wslor, Wdiv = 0.45, 0.275, 0.275
+    rewards = []
+
+    for prompt, contrast_prompt, completion in zip(prompts, contrast_prompts, completions):
+        r_ce = contrastive_control_normalized_score(prompt, contrast_prompt, completion, model, tokenizer)
+        r_slor = fluency_score(completion, model, tokenizer)
+        r_div = diversity_score(completion)
+
+        total_reward = Wce * r_ce + Wslor * r_slor + Wdiv * r_div
+        rewards.append(float(total_reward))
+
+    return rewards
+
+def reward_function_v4(prompts, completions, model, tokenizer, unigram_log_probs=None, **kwargs):
+    """
+    Reward function v4:
+    R = Wce * r_ce + Wslor * r_slor + Wdiv * r_div (Normalized Shannon Entropy)
+    """
+    Wce = kwargs.get('Wce', 1.0)
+    Wslor = kwargs.get('Wslor', 0.5)
+    Wdiv = kwargs.get('Wdiv', 0.5)
+    contrast_prompts = kwargs.get('contrast_prompts', prompts)
+
+    rewards = []
+    for prompt, contrast_prompt, completion in zip(prompts, contrast_prompts, completions):
+        r_ce = contrastive_control_effectiveness_score(prompt, contrast_prompt, completion, model, tokenizer)
+        r_slor = slor_score(completion, model, tokenizer, unigram_log_probs) if unigram_log_probs is not None else 0.0
+        r_div = normalized_shannon_diversity_score(completion)
+
+        total_reward = Wce * r_ce + Wslor * r_slor + Wdiv * r_div
+        rewards.append(float(total_reward))
+
+    return rewards

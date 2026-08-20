@@ -1,0 +1,15 @@
+torch==2.4.1
+transformers==4.47.1
+peft==0.20.0
+trl==0.17.0
+bitsandbytes==0.43.3
+accelerate==1.14.0
+datasets==5.0.1
+evaluate==0.4.6
+scikit-learn==1.9.0
+scipy==1.17.1
+sentencepiece==0.2.2
+protobuf==7.35.1
+wandb==0.28.2
+pyyaml==6.0.3
+tqdm==4.70.0

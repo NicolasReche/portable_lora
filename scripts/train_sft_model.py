@@ -72,7 +72,6 @@ if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained(model_name)
  
     # Disable Qwen3 thinking mode — it prepends <think>...</think> blocks
-    # before completions, which breaks completion_only_loss masking and
     # wastes context budget during training.
     if hasattr(tokenizer, "enable_thinking"):
         tokenizer.enable_thinking = False
@@ -171,7 +170,7 @@ if __name__ == "__main__":
         output_dir=output_path,
         seed=args.seed,
         data_seed=args.seed,
-        max_length=config['max_seq_length'],
+        max_seq_length=config['max_seq_length'],
         per_device_train_batch_size=config['training']['per_device_train_batch_size'],
         per_device_eval_batch_size=config['training']['per_device_eval_batch_size'],
         gradient_accumulation_steps=config['training']['gradient_accumulation_steps'],
@@ -193,13 +192,18 @@ if __name__ == "__main__":
         logging_steps=config['training']['logging_steps'],  # how often to log to W&B
         report_to="wandb",  # enable logging to W&B
         run_name=args.run_name,  # name of the W&B run (optional)
-        completion_only_loss=True
     )
+
+    def formatting_prompts_func(example):
+        if isinstance(example['prompt'], list):
+            return [f"{p}{c}" for p, c in zip(example['prompt'], example['completion'])]
+        return f"{example['prompt']}{example['completion']}"
 
     trainer = SFTTrainer(
         model=model,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
+        formatting_func=formatting_prompts_func,
         processing_class=tokenizer,
         args=train_args
     )

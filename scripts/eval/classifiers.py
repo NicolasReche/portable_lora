@@ -316,12 +316,12 @@ CLASSIFIERS = {
             'loading_function': load_hf_automodels,
             'predict_function': get_batch_pred_t5_class
         },
-        {
-            'model': 'models/evaluation/Yelp2-checkpoint-64000',
-            'tokenizer': 'microsoft/deberta-v3-large',
-            'loading_function': load_prior_model,
-            'predict_function': prior_model_predict_sentiment
-        }
+        # {
+        #     'model': 'models/evaluation/Yelp2-checkpoint-64000',
+        #     'tokenizer': 'microsoft/deberta-v3-large',
+        #     'loading_function': load_prior_model,
+        #     'predict_function': prior_model_predict_sentiment
+        # }
     ],
     'topic': [
         {

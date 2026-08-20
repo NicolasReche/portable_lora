@@ -216,3 +216,18 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+.venv/
+models/
+logs/*.out
+logs/*.err
+results/*.csv
+results/*.json
+predictions/
+outputs/
+wandb/
+__pycache__/
+*.pyc
+.DS_Store
+slurm-*.out
+slurm-*.err
+cka_cache/

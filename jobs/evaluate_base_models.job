@@ -4,17 +4,21 @@
 
 cd /home/nreche/portable_lora/
 source .venv/bin/activate
+mkdir -p predictions logs
 
 ctg_attributes=("sentiment" "topic")
 seeds=(7097 4613 89723)
-models=("llama31" "llama32" "qwen38b" "qwen34b")
-for seed in "${seeds[@]}"
-do
-    for model in "${models[@]}"
-    do
-        for attribute in "${ctg_attributes[@]}"
-        do
-            python scripts/main_eval.py --config config/evaluate_${attribute}.yaml --seed $seed --output_file outputs/base_${model}_${attribute}_seed${seed}.json --predictions_file predictions/base_${model}_${attribute}_seed${seed}.json
+models=("llama31" "llama32")
+
+for seed in "${seeds[@]}"; do
+    for model in "${models[@]}"; do
+        for attribute in "${ctg_attributes[@]}"; do
+            output_file="outputs/base_${model}_${attribute}_seed${seed}.json"
+            pred_file="predictions/base_${model}_${attribute}_seed${seed}.json"
+            if [ -f "$output_file" ]; then
+                echo "Evaluating $output_file ..."
+                python scripts/main_eval.py --config config/evaluate_${attribute}.yaml --seed $seed --output_file "$output_file" --predictions_file "$pred_file"
+            fi
         done
     done
 done
