@@ -1,0 +1,157 @@
+================================================================
+                     PIPELINE RESULTS                           
+================================================================
+
+--- base_llama31_sentiment_seed7097.json ---
+  Test Set: data/pplm_prompts.csv
+    - accuracy: 0.6571
+    - distinct-n: 0.7667
+    - slor: 9.9408
+  Test Set: data/sts_benchmark_processed.csv
+    - accuracy: 0.6125
+    - distinct-n: 0.5033
+    - slor: 9.5623
+  Test Set: data/sts_benchmark_test_subset.csv
+    - accuracy: 0.5575
+    - distinct-n: 0.6717
+    - slor: 9.6826
+
+--- base_llama32_sentiment_seed7097.json ---
+  Test Set: data/pplm_prompts.csv
+    - accuracy: 0.7071
+    - distinct-n: 0.7600
+    - slor: 10.0130
+  Test Set: data/sts_benchmark_processed.csv
+    - accuracy: 0.6100
+    - distinct-n: 0.5183
+    - slor: 9.7598
+  Test Set: data/sts_benchmark_test_subset.csv
+    - accuracy: 0.6050
+    - distinct-n: 0.6617
+    - slor: 9.6697
+
+--- identity_llama31_sentiment_seed7097.json ---
+  Test Set: data/pplm_prompts.csv
+    - accuracy: 0.9071
+    - distinct-n: 0.6217
+    - slor: 9.9565
+  Test Set: data/sts_benchmark_processed.csv
+    - accuracy: 0.8250
+    - distinct-n: 0.5133
+    - slor: 9.9751
+  Test Set: data/sts_benchmark_test_subset.csv
+    - accuracy: 0.8175
+    - distinct-n: 0.6433
+    - slor: 10.0886
+
+--- identity_llama32_sentiment_seed7097.json ---
+  Test Set: data/pplm_prompts.csv
+    - accuracy: 0.8143
+    - distinct-n: 0.6950
+    - slor: 10.1564
+  Test Set: data/sts_benchmark_processed.csv
+    - accuracy: 0.8375
+    - distinct-n: 0.5050
+    - slor: 10.1513
+  Test Set: data/sts_benchmark_test_subset.csv
+    - accuracy: 0.7750
+    - distinct-n: 0.6017
+    - slor: 10.0206
+
+--- llama31_to_llama31_sentiment_seed7097.json ---
+  Test Set: data/pplm_prompts.csv
+    - accuracy: 0.9214
+    - distinct-n: 0.7000
+    - slor: 9.8318
+  Test Set: data/sts_benchmark_processed.csv
+    - accuracy: 0.8875
+    - distinct-n: 0.5583
+    - slor: 9.6877
+  Test Set: data/sts_benchmark_test_subset.csv
+    - accuracy: 0.8200
+    - distinct-n: 0.6567
+    - slor: 9.9263
+
+--- llama31_to_llama32_sentiment_seed7097.json ---
+  Test Set: data/pplm_prompts.csv
+    - accuracy: 0.7000
+    - distinct-n: 0.7583
+    - slor: 9.7934
+  Test Set: data/sts_benchmark_processed.csv
+    - accuracy: 0.6325
+    - distinct-n: 0.5050
+    - slor: 9.7950
+  Test Set: data/sts_benchmark_test_subset.csv
+    - accuracy: 0.6125
+    - distinct-n: 0.6950
+    - slor: 9.7177
+
+--- rl_llama31_sentiment_seed7097.json ---
+  Test Set: data/pplm_prompts.csv
+    - accuracy: 0.8929
+    - distinct-n: 0.5583
+    - slor: 8.8305
+  Test Set: data/sts_benchmark_processed.csv
+    - accuracy: 0.8225
+    - distinct-n: 0.3783
+    - slor: 8.5930
+  Test Set: data/sts_benchmark_test_subset.csv
+    - accuracy: 0.7875
+    - distinct-n: 0.4800
+    - slor: 8.9013
+
+--- rl_llama31_to_llama32_sentiment_seed7097.json ---
+  Test Set: data/pplm_prompts.csv
+    - accuracy: 0.7071
+    - distinct-n: 0.7683
+    - slor: 9.9197
+  Test Set: data/sts_benchmark_processed.csv
+    - accuracy: 0.6050
+    - distinct-n: 0.4433
+    - slor: 9.7995
+  Test Set: data/sts_benchmark_test_subset.csv
+    - accuracy: 0.5825
+    - distinct-n: 0.6917
+    - slor: 9.7305
+
+--- rl_v2_1_llama31_sentiment_seed7097.json ---
+  Test Set: data/pplm_prompts.csv
+    - accuracy: 0.9714
+    - distinct-n: 0.6750
+    - slor: 8.2486
+  Test Set: data/sts_benchmark_processed.csv
+    - accuracy: 0.9500
+    - distinct-n: 0.4983
+    - slor: 8.4468
+  Test Set: data/sts_benchmark_test_subset.csv
+    - accuracy: 0.8550
+    - distinct-n: 0.5917
+    - slor: 8.7244
+
+--- few_step_llama31_to_llama32_sentiment_seed7097.json ---
+  Test Set: data/pplm_prompts.csv
+    - accuracy: 0.8857
+    - distinct-n: 0.6467
+    - slor: 9.8946
+  Test Set: data/sts_benchmark_processed.csv
+    - accuracy: 0.8975
+    - distinct-n: 0.4717
+    - slor: 9.8320
+  Test Set: data/sts_benchmark_test_subset.csv
+    - accuracy: 0.8425
+    - distinct-n: 0.5667
+    - slor: 9.8362
+
+--- few_step_llama32_to_llama31_sentiment_seed7097.json ---
+  Test Set: data/pplm_prompts.csv
+    - accuracy: 0.9000
+    - distinct-n: 0.6550
+    - slor: 9.9008
+  Test Set: data/sts_benchmark_processed.csv
+    - accuracy: 0.8300
+    - distinct-n: 0.4950
+    - slor: 9.8076
+  Test Set: data/sts_benchmark_test_subset.csv
+    - accuracy: 0.7800
+    - distinct-n: 0.5867
+    - slor: 9.8191
