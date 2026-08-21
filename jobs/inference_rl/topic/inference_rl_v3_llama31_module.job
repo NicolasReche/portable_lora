@@ -1,0 +1,39 @@
+#!/bin/bash
+#SBATCH -p compute
+#SBATCH -J inf_v3_llama31_top
+#SBATCH --gres=gpu:rtxa6000:1
+#SBATCH --mem=90G
+#SBATCH -o logs/inf_v3_llama31_topic_%j.out
+
+cd /home/nreche/portable_lora/
+source .venv/bin/activate
+mkdir -p outputs predictions logs
+
+SEED=7097
+MODULE_PATH=$(ls -td models/rl_llama3.1_8b_topic_v3_seed${SEED}/checkpoint-* 2>/dev/null | head -n 1)
+if [ -z "$MODULE_PATH" ]; then
+    MODULE_PATH="models/rl_llama3.1_8b_topic_v3_seed${SEED}/"
+fi
+
+for TGT_MODEL in "llama31" "llama32"; do
+    OUTPUT_FILE="outputs/rl_v3_llama31_to_${TGT_MODEL}_topic_seed${SEED}.json"
+    PRED_FILE="predictions/rl_v3_llama31_to_${TGT_MODEL}_topic_seed${SEED}.json"
+
+    echo "=== Generating outputs for llama31 -> ${TGT_MODEL} ==="
+    python scripts/run_portability.py --step generate --seed $SEED \
+        --module "$MODULE_PATH" \
+        --src_model llama31 --tgt_model $TGT_MODEL --attribute topic \
+        --dataset data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv \
+        --output "$OUTPUT_FILE"
+
+    echo "=== Evaluating outputs for llama31 -> ${TGT_MODEL} ==="
+    if [ -f "$OUTPUT_FILE" ]; then
+        python scripts/main_eval.py --config config/evaluate_topic.yaml \
+            --seed $SEED \
+            --output_file "$OUTPUT_FILE" \
+            --predictions_file "$PRED_FILE"
+    fi
+done
+
+echo "=== Summary Analysis ==="
+python scripts/analyze_results.py

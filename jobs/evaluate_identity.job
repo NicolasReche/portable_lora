@@ -1,4 +1,5 @@
 #!/bin/bash
+#SBATCH -p compute
 #SBATCH -J eval_identity
 #SBATCH --gres=gpu:rtxa6000:1
 #SBATCH --mem=32G

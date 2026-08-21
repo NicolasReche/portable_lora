@@ -1,4 +1,5 @@
 #!/bin/bash
+#SBATCH -p compute
 #SBATCH -J rl_v2_1_32
 #SBATCH --gres=gpu:rtxa6000:1
 #SBATCH --mem=90G

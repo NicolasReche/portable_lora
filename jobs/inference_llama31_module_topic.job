@@ -1,4 +1,5 @@
 #!/bin/bash
+#SBATCH -p compute
 #SBATCH -J l31_inf
 #SBATCH --gres=gpu:a100:1
 #SBATCH --mem=90000

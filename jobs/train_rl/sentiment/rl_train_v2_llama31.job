@@ -1,21 +1,26 @@
 #!/bin/bash
-#SBATCH -J rl_train_v2
+#SBATCH -p compute
+#SBATCH -J rl_v2_3.1
 #SBATCH --gres=gpu:a100:1
 #SBATCH --mem=64G
 #SBATCH --cpus-per-task=4
 #SBATCH --time=48:00:00
-#SBATCH -o logs/rl_train_v2_%j.out
+#SBATCH -o logs/rl_train_v2_llama31_%j.out
 
 cd /home/nreche/portable_lora/
 source .venv/bin/activate
 mkdir -p logs models
+
+export TOKENIZERS_PARALLELISM=false
+export OMP_NUM_THREADS=4
+export PYTHONUNBUFFERED=1
 
 SEED=7097
 ATTRIBUTE="sentiment"
 MODEL="llama3.1_8b"
 VERSION="v2"
 
-echo "Starting RL training for $MODEL on $ATTRIBUTE task (seed $SEED, reward $VERSION)..."
+echo "=== Launching RL training (V2 - LLaMa 3.1) ==="
 python scripts/rl_peft/train_rl_model.py \
     --config_path config/rl_train_${MODEL}_${ATTRIBUTE}.yaml \
     --seed $SEED \
