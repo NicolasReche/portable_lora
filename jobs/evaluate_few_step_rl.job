@@ -1,0 +1,31 @@
+#!/bin/bash
+#SBATCH -p compute
+#SBATCH -J eval_few_step_rl
+#SBATCH --gres=gpu:rtxa6000:1
+
+cd /home/nreche/portable_lora/
+source .venv/bin/activate
+mkdir -p predictions logs
+
+ctg_attributes=("sentiment")
+seeds=(7097)
+pairs=("llama31:llama32" "llama32:llama31")
+versions=("v1" "v2" "v3" "v4")
+
+for seed in "${seeds[@]}"; do
+    for pair in "${pairs[@]}"; do
+        src_model="${pair%%:*}"
+        tgt_model="${pair##*:}"
+        for attribute in "${ctg_attributes[@]}"; do
+            for version in "${versions[@]}"; do
+                output_file="results/few_step_rl_${src_model}_to_${tgt_model}_${attribute}_${version}_seed${seed}.json"
+                pred_file="predictions/few_step_rl_${src_model}_to_${tgt_model}_${attribute}_${version}_seed${seed}.json"
+                
+                if [ -f "$output_file" ]; then
+                    echo "Evaluating $output_file ..."
+                    python scripts/main_eval.py --config config/evaluate_${attribute}.yaml --seed $seed --output_file "$output_file" --predictions_file "$pred_file"
+                fi
+            done
+        done
+    done
+done
