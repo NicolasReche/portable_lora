@@ -325,8 +325,8 @@ def main():
     model = PeftModel.from_pretrained(base, tmp_dir, is_trainable=True)
     model.print_trainable_parameters()
 
-    lft_steps = config["training"].get("lft_max_steps", 200)
-    eval_steps = config["training"].get("eval_steps", 50)
+    lft_steps = config["training"].get("lft_max_steps", int(config["training"].get("max_steps", 2000) * 0.10))
+    eval_steps = max(1, lft_steps // 2)
     logger.info(f"LFT steps: {lft_steps}  |  Eval every: {eval_steps} steps")
 
     train_args = SFTConfig(
