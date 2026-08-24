@@ -207,7 +207,7 @@ if __name__ == "__main__":
     trainer = GRPOTrainer(
         model=model,
         train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
+        eval_dataset=eval_dataset if config['training'].get('eval_strategy', 'no') != 'no' else None,
         processing_class=tokenizer,
         args=train_args,
         reward_funcs=[selected_reward_func],
