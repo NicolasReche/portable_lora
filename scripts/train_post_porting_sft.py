@@ -359,6 +359,7 @@ def main():
         report_to                   = "wandb",
         run_name                    = run_name,
         completion_only_loss        = True,
+        overwrite_output_dir        = True,
     )
 
     trainer = SFTTrainer(
