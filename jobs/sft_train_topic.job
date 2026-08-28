@@ -1,0 +1,23 @@
+#!/bin/bash
+#SBATCH -p compute
+#SBATCH -J sft_train
+#SBATCH --gres=gpu:a100:1
+#SBATCH --mem=128G
+#SBATCH --cpus-per-task=4
+
+cd /home/nreche/portable_lora/
+source .venv/bin/activate
+
+ctg_attributes=("topic")
+seeds=(7097)
+models=("llama3.1_8b" "llama3.2_3b")
+for attribute in "${ctg_attributes[@]}"
+do
+    for seed in "${seeds[@]}"
+    do
+        for model in "${models[@]}"
+        do
+	        python scripts/train_sft_model.py --config_path config/sft_train_${model}_${attribute}.yaml --seed $seed --model_dir models --run_name sft_${model}_${attribute}_seed${seed}
+        done
+    done
+done

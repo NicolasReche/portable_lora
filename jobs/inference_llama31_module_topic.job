@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -p compute
-#SBATCH -J l31_inf
+#SBATCH -J llama31_inf
 #SBATCH --gres=gpu:a100:1
 #SBATCH --mem=90000
 
@@ -13,6 +13,6 @@ for seed in "${seeds[@]}"
 do
     for model in "${models[@]}"
     do
-        python scripts/run_portability.py --step generate --seed $seed --module models/sft_llama3.1_8b_topic_seed${seed}/checkpoint-1840/ --src_model llama31 --tgt_model $model --attribute topic --dataset data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv --output outputs/topic/llama31_to_${model}_topic_seed${seed}.json
+        python scripts/run_portability.py --step generate --seed $seed --module models/sft_llama3.1_8b_topic_seed${seed}/checkpoint-200/ --src_model llama31 --tgt_model $model --attribute topic --dataset data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv --output outputs/llama31_to_${model}_topic_seed${seed}.json
     done
 done

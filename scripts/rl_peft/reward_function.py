@@ -226,6 +226,24 @@ def reward_function_v3(prompts: List[str], completions: List[str], model, tokeni
         rewards.append(0.45 * r_ce + 0.275 * r_slor + 0.275 * r_div)
     return rewards
 
+def reward_function_v3_1(prompts: List[str], completions: List[str], model, tokenizer, contrast_prompts: Optional[List[str]] = None, unigram_log_probs: Optional[Dict[int, float]] = None, **kwargs) -> List[float]:
+    """
+    Reward function V3.1 (Raw Contrastive Control + SLOR Fluency):
+        reward = Wce * R_control_effectiveness + Wslor * R_SLOR + Wdiv * R_diversity
+
+    Changes from V3:
+        1. Control Reward: Reverts back to V2's un-normalized `contrastive_control_effectiveness_score` instead of V2.1's normalized score.
+    """
+    if contrast_prompts is None:
+        contrast_prompts = [get_contrast_prompt(p) for p in prompts]
+    rewards = []
+    for prompt, cp, comp in zip(prompts, contrast_prompts, completions):
+        r_ce = contrastive_control_effectiveness_score(prompt, cp, comp, model, tokenizer)
+        r_slor = slor_score(comp, model, tokenizer, unigram_log_probs)
+        r_div = diversity_score(comp)
+        rewards.append(0.45 * r_ce + 0.275 * r_slor + 0.275 * r_div)
+    return rewards
+
 def reward_function_v4(prompts: List[str], completions: List[str], model, tokenizer, contrast_prompts: Optional[List[str]] = None, unigram_log_probs: Optional[Dict[int, float]] = None, **kwargs) -> List[float]:
     """
     Reward function V4 (Length-Normalized Contrastive Control + SLOR Fluency + Shannon Entropy Diversity):
@@ -233,8 +251,8 @@ def reward_function_v4(prompts: List[str], completions: List[str], model, tokeni
 
     Changes from V3:
         1. Diversity (Shannon Entropy):
-           - Penalizes repetition by computing the distribution of unigrams (tokens).
-           - R_entropy = normalized_entropy(tokens)
+           - Penalizes repetition by computing the distribution of trigrams and 4-grams (preventing phrase loops).
+           - R_entropy = (normalized_entropy(3-grams) + normalized_entropy(4-grams)) / 2
 
     Same as V3:
         2. Control Reward (R_control_normalized):
@@ -255,14 +273,59 @@ def reward_function_v4(prompts: List[str], completions: List[str], model, tokeni
         r_ce = contrastive_control_effectiveness_score(prompt, cp, comp, model, tokenizer)
         r_slor = slor_score(comp, model, tokenizer, unigram_log_probs)
         tokens = comp.strip().split()
-        if tokens:
+        if len(tokens) >= 3:
             from collections import Counter
-            counts = Counter(tokens)
-            probs = [c / len(tokens) for c in counts.values()]
-            entropy = -sum(p * math.log2(p) for p in probs)
-            max_ent = math.log2(len(tokens)) if len(tokens) > 1 else 1.0
-            r_entropy = entropy / max_ent if max_ent > 0 else 1.0
+            
+            def calc_ngram_entropy(n):
+                if len(tokens) < n:
+                    return 1.0
+                ngrams = [" ".join(tokens[i:i+n]) for i in range(len(tokens)-n+1)]
+                counts = Counter(ngrams)
+                probs = [c / len(ngrams) for c in counts.values()]
+                entropy = -sum(p * math.log2(p) for p in probs)
+                max_ent = math.log2(len(ngrams)) if len(ngrams) > 1 else 1.0
+                return entropy / max_ent if max_ent > 0 else 1.0
+                
+            r_entropy_3 = calc_ngram_entropy(3)
+            r_entropy_4 = calc_ngram_entropy(4)
+            r_entropy = (r_entropy_3 + r_entropy_4) / 2.0
         else:
-            r_entropy = 0.0
+            r_entropy = 1.0
+        rewards.append(0.45 * r_ce + 0.275 * r_slor + 0.275 * r_entropy)
+    return rewards
+
+def reward_function_v4_1(prompts: List[str], completions: List[str], model, tokenizer, contrast_prompts: Optional[List[str]] = None, unigram_log_probs: Optional[Dict[int, float]] = None, **kwargs) -> List[float]:
+    """
+    Reward function V4.1 (Raw Contrastive Control + SLOR Fluency + Shannon Entropy Diversity):
+        reward = Wce * R_control_effectiveness + Wslor * R_SLOR + Wdiv * R_entropy
+
+    Changes from V4:
+        1. Control Reward: Reverts back to V2's un-normalized `contrastive_control_effectiveness_score` instead of V2.1's normalized score.
+    """
+    if contrast_prompts is None:
+        contrast_prompts = [get_contrast_prompt(p) for p in prompts]
+    rewards = []
+    for prompt, cp, comp in zip(prompts, contrast_prompts, completions):
+        r_ce = contrastive_control_effectiveness_score(prompt, cp, comp, model, tokenizer)
+        r_slor = slor_score(comp, model, tokenizer, unigram_log_probs)
+        tokens = comp.strip().split()
+        if len(tokens) >= 3:
+            from collections import Counter
+            
+            def calc_ngram_entropy(n):
+                if len(tokens) < n:
+                    return 1.0
+                ngrams = [" ".join(tokens[i:i+n]) for i in range(len(tokens)-n+1)]
+                counts = Counter(ngrams)
+                probs = [c / len(ngrams) for c in counts.values()]
+                entropy = -sum(p * math.log2(p) for p in probs)
+                max_ent = math.log2(len(ngrams)) if len(ngrams) > 1 else 1.0
+                return entropy / max_ent if max_ent > 0 else 1.0
+                
+            r_entropy_3 = calc_ngram_entropy(3)
+            r_entropy_4 = calc_ngram_entropy(4)
+            r_entropy = (r_entropy_3 + r_entropy_4) / 2.0
+        else:
+            r_entropy = 1.0
         rewards.append(0.45 * r_ce + 0.275 * r_slor + 0.275 * r_entropy)
     return rewards

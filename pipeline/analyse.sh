@@ -1,7 +1,6 @@
 #!/bin/bash
 # analyse.sh - Run global evaluation, metric consolidation and summary reports
 
-echo "Submitting Consolidated Analysis Job..."
 mkdir -p logs results outputs
 
 if [ -f "jobs/analyze.job" ]; then

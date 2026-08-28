@@ -10,7 +10,7 @@ from datasets import load_dataset
 from trl import GRPOTrainer, GRPOConfig
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import PeftModel, prepare_model_for_kbit_training
-from reward_function import reward_function_v1, reward_function_v2, reward_function_v2_1, reward_function_v3, reward_function_v4
+from reward_function import reward_function_v1, reward_function_v2, reward_function_v2_1, reward_function_v3, reward_function_v3_1, reward_function_v4, reward_function_v4_1
 
 import random
 
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--model_dir', type=str, default='models/')
     parser.add_argument('--run_name', type=str, default='sft_training_run')
-    parser.add_argument('--reward_version', type=str, default='v1', choices=['v1', 'v2', 'v2_1', 'v3', 'v4'], help='Reward function version to use')
+    parser.add_argument('--reward_version', type=str, default='v1', choices=['v1', 'v2', 'v2_1', 'v3', 'v3_1', 'v4', 'v4_1'], help='Reward function version to use')
     args = parser.parse_args()
 
     with open(args.config_path, 'r', encoding='utf-8') as f:
@@ -210,10 +210,18 @@ if __name__ == "__main__":
         def selected_reward_func(prompts, completions, **kwargs):
             return reward_function_v2_1(prompts=prompts, completions=completions, model=model, tokenizer=tokenizer, **kwargs)
         selected_reward_func.__name__ = 'reward_function_v2_1'
+    elif args.reward_version == 'v3_1':
+        def selected_reward_func(prompts, completions, **kwargs):
+            return reward_function_v3_1(prompts=prompts, completions=completions, model=model, tokenizer=tokenizer, unigram_log_probs=unigram_log_probs, **kwargs)
+        selected_reward_func.__name__ = 'reward_function_v3_1'
     elif args.reward_version == 'v4':
         def selected_reward_func(prompts, completions, **kwargs):
             return reward_function_v4(prompts=prompts, completions=completions, model=model, tokenizer=tokenizer, unigram_log_probs=unigram_log_probs, **kwargs)
         selected_reward_func.__name__ = 'reward_function_v4'
+    elif args.reward_version == 'v4_1':
+        def selected_reward_func(prompts, completions, **kwargs):
+            return reward_function_v4_1(prompts=prompts, completions=completions, model=model, tokenizer=tokenizer, unigram_log_probs=unigram_log_probs, **kwargs)
+        selected_reward_func.__name__ = 'reward_function_v4_1'
     else:
         def selected_reward_func(prompts, completions, **kwargs):
             return reward_function_v3(prompts=prompts, completions=completions, model=model, tokenizer=tokenizer, unigram_log_probs=unigram_log_probs, **kwargs)

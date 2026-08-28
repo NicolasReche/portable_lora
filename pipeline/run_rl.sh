@@ -19,38 +19,38 @@ submit_rl_model() {
     local out1="outputs/rl_${version}_${model_short}_to_llama31_sentiment_seed${SEED}.json"
     local out2="outputs/rl_${version}_${model_short}_to_llama32_sentiment_seed${SEED}.json"
 
-    # 1. Vérification de l'entraînement
+    # 1. Check training status
     JOB_TRAIN=""
     if [ -d "$model_dir" ]; then
-        echo "  [SKIP] Entraînement déjà fait pour $version ($model_short). Le dossier du modèle existe."
+        echo "  [SKIP] Training already done for $version ($model_short). Model directory exists."
     else
         if [ -f "$train_job" ]; then
-            echo "  [RUN] Lancement de l'entraînement RL ($version pour $model_short)..."
+            echo "  [RUN] Launching RL training ($version for $model_short)..."
             JOB_TRAIN=$(sbatch --parsable $train_job)
             echo "    -> Train Job ID: $JOB_TRAIN"
         else
-            echo "  [ERROR] Script $train_job introuvable."
+            echo "  [ERROR] Script $train_job not found."
         fi
     fi
 
-    # 2. Vérification de l'inférence
+    # 2. Check inference status
     if [ -f "$out1" ] && [ -f "$out2" ]; then
-        echo "  [SKIP] Inférence déjà faite pour $version ($model_short). Les résultats existent."
+        echo "  [SKIP] Inference already done for $version ($model_short). Results exist."
     else
         if [ -f "$inf_job" ]; then
             if [ -n "$JOB_TRAIN" ]; then
-                # Si l'entraînement vient d'être lancé, on attend qu'il finisse
-                echo "  [RUN] Lancement de l'inférence ($version pour $model_short) EN ATTENTE du Job $JOB_TRAIN..."
+                # If training was just launched, wait for it to finish
+                echo "  [RUN] Launching inference ($version for $model_short) WAITING for Job $JOB_TRAIN..."
                 JOB_EVAL=$(sbatch --parsable --dependency=afterok:$JOB_TRAIN $inf_job)
                 echo "    -> Chained Inf/Eval Job ID: $JOB_EVAL"
             else
-                # Si l'entraînement était déjà fini (SKIP) mais que l'inférence manque, on la lance tout de suite
-                echo "  [RUN] Lancement immédiat de l'inférence ($version pour $model_short)..."
+                # If training was already done (SKIP) but inference is missing, launch it immediately
+                echo "  [RUN] Immediate launch of inference ($version for $model_short)..."
                 JOB_EVAL=$(sbatch --parsable $inf_job)
                 echo "    -> Independent Inf/Eval Job ID: $JOB_EVAL"
             fi
         else
-            echo "  [ERROR] Script $inf_job introuvable."
+            echo "  [ERROR] Script $inf_job not found."
         fi
     fi
 }
@@ -63,6 +63,6 @@ for VERSION in "v1" "v2" "v2_1" "v3" "v4"; do
 done
 
 echo "=========================================================="
-echo "Vérification et exécution du pipeline RL terminées."
-echo "Suivez les tâches en cours avec: squeue -u $USER"
+echo "RL pipeline check and execution completed"
+echo "Track running tasks with: squeue -u $USER"
 echo "=========================================================="

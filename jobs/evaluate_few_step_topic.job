@@ -1,0 +1,20 @@
+#!/bin/bash
+#SBATCH -p compute
+#SBATCH -J eval_few_step
+#SBATCH --gres=gpu:rtxa6000:1
+#SBATCH --mem=32G
+#SBATCH -o logs/eval_few_step_%j.out
+
+cd /home/nreche/portable_lora/
+source .venv/bin/activate
+mkdir -p predictions logs
+
+for f in results/few_step_llama31_to_llama32_topic_seed7097.json results/few_step_llama32_to_llama31_topic_seed7097.json; do
+    if [ -f "$f" ]; then
+        bname=$(basename "$f")
+        echo "Evaluating $bname ..."
+        python scripts/main_eval.py --config config/evaluate_topic.yaml --seed 7097 --output_file "$f" --predictions_file "predictions/$bname"
+    fi
+done
+
+python scripts/analyze_results.py

@@ -28,32 +28,32 @@ check_and_run() {
 }
 
 echo "[1/9] Training SFT control modules..."
-JOB_SFT=$(check_and_run "SFT Training" "models/sft_llama3.1_8b_sentiment_seed${SEED}/checkpoint-400" "jobs/sft_train.job" "")
+JOB_SFT=$(check_and_run "SFT Training" "models/sft_llama3.1_8b_topic_seed${SEED}/checkpoint-400" "jobs/sft_train_topic.job" "")
 
 echo "[2/9] Base model inference..."
 # Base model inference does not depend on SFT
-JOB_INF_BASE=$(check_and_run "Base Inference" "outputs/base_llama31_sentiment_seed${SEED}.json" "jobs/inference_base_models.job" "")
+JOB_INF_BASE=$(check_and_run "Base Inference" "outputs/base_llama31_topic_seed${SEED}.json" "jobs/inference_base_models_topic.job" "")
 
 echo "[3/9] Base model evaluation..."
-JOB_EVAL_BASE=$(check_and_run "Base Eval" "predictions/base_llama31_sentiment_seed${SEED}.json" "jobs/evaluate_base_models.job" "$JOB_INF_BASE")
+JOB_EVAL_BASE=$(check_and_run "Base Eval" "predictions/base_llama31_topic_seed${SEED}.json" "jobs/evaluate_base_models_topic.job" "$JOB_INF_BASE")
 
 echo "[4/9] Identity inference..."
-JOB_INF_ID=$(check_and_run "Identity Inference" "outputs/identity_llama31_sentiment_seed${SEED}.json" "jobs/inference_identity_sentiment.job" "$JOB_SFT")
+JOB_INF_ID=$(check_and_run "Identity Inference" "outputs/identity_llama31_topic_seed${SEED}.json" "jobs/inference_identity_topic.job" "$JOB_SFT")
 
 echo "[5/9] Identity evaluation..."
-JOB_EVAL_ID=$(check_and_run "Identity Eval" "predictions/identity_llama31_sentiment_seed${SEED}.json" "jobs/evaluate_identity.job" "$JOB_INF_ID")
+JOB_EVAL_ID=$(check_and_run "Identity Eval" "predictions/identity_llama31_topic_seed${SEED}.json" "jobs/evaluate_identity_topic.job" "$JOB_INF_ID")
 
 echo "[6/9] Zero-shot ported module inference..."
-JOB_INF_PORT=$(check_and_run "Porting Inference" "outputs/llama31_to_llama32_sentiment_seed${SEED}.json" "jobs/inference_llama31_module_sentiment.job" "$JOB_SFT")
+JOB_INF_PORT=$(check_and_run "Porting Inference" "outputs/llama31_to_llama32_topic_seed${SEED}.json" "jobs/inference_llama31_module_topic.job" "$JOB_SFT")
 
 echo "[7/9] Zero-shot ported module evaluation..."
-JOB_EVAL_PORT=$(check_and_run "Porting Eval" "predictions/llama31_to_llama32_sentiment_seed${SEED}.json" "jobs/evaluate_llama31_module.job" "$JOB_INF_PORT")
+JOB_EVAL_PORT=$(check_and_run "Porting Eval" "predictions/llama31_to_llama32_topic_seed${SEED}.json" "jobs/evaluate_llama31_module_topic.job" "$JOB_INF_PORT")
 
 echo "[8/9] Few-step adaptation..."
-JOB_FEW_STEP=$(check_and_run "Few-step Train" "results/few_step_llama31_to_llama32_sentiment_seed${SEED}.json" "jobs/train_post_porting_sft.job" "$JOB_SFT")
+JOB_FEW_STEP=$(check_and_run "Few-step Train" "results/few_step_llama31_to_llama32_topic_seed${SEED}.json" "jobs/train_post_porting_sft_topic.job" "$JOB_SFT")
 
 echo "[9/9] Few-step evaluation..."
-JOB_EVAL_FEW_STEP=$(check_and_run "Few-step Eval" "predictions/few_step_llama31_to_llama32_sentiment_seed${SEED}.json" "jobs/evaluate_few_step.job" "$JOB_FEW_STEP")
+JOB_EVAL_FEW_STEP=$(check_and_run "Few-step Eval" "predictions/few_step_llama31_to_llama32_topic_seed${SEED}.json" "jobs/evaluate_few_step_topic.job" "$JOB_FEW_STEP")
 
 echo "=========================================================="
 echo "Reproduction pipeline check complete"

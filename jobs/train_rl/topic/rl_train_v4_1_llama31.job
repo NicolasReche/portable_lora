@@ -1,0 +1,29 @@
+#!/bin/bash
+#SBATCH -p compute
+#SBATCH -J rl_v4_1_3.1
+#SBATCH --gres=gpu:a100:1
+#SBATCH --mem=64G
+#SBATCH --cpus-per-task=4
+#SBATCH --time=48:00:00
+#SBATCH -o logs/rl_train_v4_1_llama31_%j.out
+
+cd /home/nreche/portable_lora/
+source .venv/bin/activate
+mkdir -p logs models
+
+export TOKENIZERS_PARALLELISM=false
+export OMP_NUM_THREADS=4
+export PYTHONUNBUFFERED=1
+
+SEED=7097
+ATTRIBUTE="topic"
+MODEL="llama3.1_8b"
+VERSION="v4_1"
+
+echo "=== Launching RL training (V4.1 - LLaMa 3.1) ==="
+python scripts/rl_peft/train_rl_model.py \
+    --config_path config/rl_train_${MODEL}_${ATTRIBUTE}.yaml \
+    --seed $SEED \
+    --model_dir models \
+    --reward_version $VERSION \
+    --run_name rl_${MODEL}_${ATTRIBUTE}_${VERSION}_seed${SEED}

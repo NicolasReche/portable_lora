@@ -1,20 +1,15 @@
 #!/bin/bash
-# Script rapide pour se connecter au serveur Grove
+# Quick script to connect to the Grove server
 
-knock -v -d 700 134.226.42.250 49191 60998 65159 58436
-ssh nreche@grove.computing.dcu.ie -J nreche@lir.adaptcentre.ie:8443
+#knock -v -d 700 134.226.42.250 49191 60998 65159 58436
+#ssh nreche@grove.computing.dcu.ie -J nreche@lir.adaptcentre.ie:8443
 
-# === MEMO DES COMMANDES SLURM (À taper UNE FOIS CONNECTÉ sur Grove) ===
-# sbatch jobs/sft_train.job          -> Pour lancer un entraînement
-# squeue -u nreche                   -> Pour voir si le job est en attente (PD) ou tourne (R)
-# cat resultats_entrainement.log     -> Pour lire tout le fichier de log (le "cat truc" !)
-# tail -f resultats_entrainement.log -> Pour lire les logs en direct (Ctrl+C pour quitter)
-# scancel LE_NUMERO_DU_JOB           -> Pour annuler un entraînement
+#knock -v -d 1000 134.226.42.250 49191 60998 65159 58436 && ssh -v -p 8443 nreche@lir.adaptcentre.ie
+#ssh nreche@grove.computing.dcu.ie -J nreche@lir.adaptcentre.ie:8443
 
-
-#sbatch jobs/evaluate_base_models.job
-#sbatch jobs/evaluate_llama31_module.job
-#sbatch jobs/inference_base_models.job
-#sbatch jobs/inference_llama31_module_sentiment.job
-#sbatch jobs/inference_llama31_module_topic.job
-#sbatch jobs/train_post_porting_sft.job
+# === SLURM COMMANDS MEMO (To be typed ONCE CONNECTED on Grove) ===
+# sbatch jobs/sft_train.job          -> To launch a training job
+# squeue -u nreche                   -> To check if the job is pending (PD) or running (R)
+# cat resultats_entrainement.log     -> To read the entire log file
+# tail -f resultats_entrainement.log -> To read the logs live (Ctrl+C to quit)
+# scancel JOB_ID                     -> To cancel a training job

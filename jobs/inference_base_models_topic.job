@@ -1,0 +1,21 @@
+#!/bin/bash
+#SBATCH -p compute
+#SBATCH -J base_inf
+#SBATCH --gres=gpu:a100:1
+
+cd /home/nreche/portable_lora/
+source .venv/bin/activate
+
+ctg_attributes=("topic")
+seeds=(7097)
+models=("llama31" "llama32")
+for seed in "${seeds[@]}"
+do
+    for model in "${models[@]}"
+    do
+        for attribute in "${ctg_attributes[@]}"
+        do
+            python scripts/base_inference.py --seed $seed --tgt_model $model --attribute $attribute --dataset data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv --output outputs/base_${model}_${attribute}_seed${seed}.json
+        done
+    done
+done
