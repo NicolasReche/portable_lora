@@ -14,9 +14,9 @@ def get_contrast_prompt(prompt: str) -> str:
     elif "sports" in p_lower:
         return prompt.replace("sports", "world").replace("Sports", "World")
     elif "business" in p_lower:
-        return prompt.replace("business", "sci/tech").replace("Business", "Sci/Tech")
-    elif "sci/tech" in p_lower or "technology" in p_lower:
-        return prompt.replace("sci/tech", "business").replace("Sci/Tech", "Business")
+        return prompt.replace("business", "science/technology").replace("Business", "Science/Technology")
+    elif "science" in p_lower or "technology" in p_lower or "sci/tech" in p_lower:
+        return prompt.replace("science/technology", "business").replace("Science/Technology", "Business").replace("sci/tech", "business").replace("Sci/Tech", "Business")
     return prompt
 
 def diversity_score(text: str) -> float:
