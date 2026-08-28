@@ -8,56 +8,60 @@
 cd /home/nreche/portable_lora/
 source .venv/bin/activate
 
-ctg_attributes=("sentiment")
-seeds=(7097)
-pairs=("llama31:llama32" "llama32:llama31")
-versions=("v1" "v2" "v3" "v4")
+REQ_VERSION="${1:-all}"
+REQ_SRC="${2:-llama31}"
+REQ_TGT="${3:-llama32}"
+REQ_ATTR="${4:-sentiment}"
+REQ_SEED="${5:-7097}"
 
-for attribute in "${ctg_attributes[@]}"
-do
-    # Set the checkpoint step based on attribute training duration
-    if [ "$attribute" == "sentiment" ]; then
-        ckpt="checkpoint-400"
-        test_csv="data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv"
-    else
-        ckpt="checkpoint-1840"
-        test_csv="data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv"
-    fi
+if [ "$REQ_VERSION" == "all" ]; then
+    versions=("v1" "v2" "v2_1" "v3" "v4")
+else
+    versions=("${REQ_VERSION#rl_}")
+fi
 
-    for seed in "${seeds[@]}"
-    do
-        for pair in "${pairs[@]}"
-        do
+if [ "$REQ_SRC" == "all" ]; then
+    pairs=("llama31:llama32" "llama32:llama31")
+else
+    s_clean="${REQ_SRC%%_*}"
+    t_clean="${REQ_TGT%%_*}"
+    pairs=("${s_clean}:${t_clean}")
+fi
+
+ctg_attributes=("$REQ_ATTR")
+seeds=("$REQ_SEED")
+
+test_csv="data/pplm_prompts.csv data/sts_benchmark_processed.csv data/sts_benchmark_test_subset.csv"
+
+for attribute in "${ctg_attributes[@]}"; do
+    for seed in "${seeds[@]}"; do
+        for pair in "${pairs[@]}"; do
             src_model="${pair%%:*}"
             tgt_model="${pair##*:}"
 
-            if [ "$tgt_model" == "llama32" ]; then
-                tgt_cfg_model="llama3.2_3b"
-            else
-                tgt_cfg_model="llama3.1_8b"
-            fi
+            tgt_cfg_model="llama3.1_8b"
+            [ "$tgt_model" == "llama32" ] && tgt_cfg_model="llama3.2_3b"
 
-            if [ "$src_model" == "llama32" ]; then
-                src_path_model="llama3.2_3b"
-            else
-                src_path_model="llama3.1_8b"
-            fi
+            src_path_model="llama3.1_8b"
+            [ "$src_model" == "llama32" ] && src_path_model="llama3.2_3b"
 
-            for version in "${versions[@]}"
-            do
-                # RL models have the version in their path: rl_llama3.1_8b_sentiment_v3_seed7097
-                module_dir="./models/rl_${src_path_model}_${attribute}_${version}_seed${seed}/${ckpt}"
+            for version in "${versions[@]}"; do
+                base_dir="./models/rl_${src_path_model}_${attribute}_${version}_seed${seed}"
+                
+                if [ -d "${base_dir}/checkpoint-400" ]; then
+                    module_dir="${base_dir}/checkpoint-400"
+                elif [ -d "${base_dir}/checkpoint-100" ]; then
+                    module_dir="${base_dir}/checkpoint-100"
+                elif [ -d "${base_dir}/checkpoint-1840" ]; then
+                    module_dir="${base_dir}/checkpoint-1840"
+                else
+                    module_dir="${base_dir}"
+                fi
 
-                python scripts/train_post_porting_sft.py \
-                    --config_path config/sft_train_${tgt_cfg_model}_${attribute}.yaml \
-                    --src_model ${src_model} \
-                    --tgt_model ${tgt_model} \
-                    --module ${module_dir} \
-                    --attribute ${attribute} \
-                    --seed ${seed} \
-                    --output_dir ./models/few_step_rl/${src_model}_to_${tgt_model}_${attribute}_${version}_seed${seed} \
-                    --test_datasets ${test_csv} \
-                    --output_json ./results/few_step_rl_${src_model}_to_${tgt_model}_${attribute}_${version}_seed${seed}.json
+                echo "=== Running Few-Step RL ==="
+                echo "Source: $src_model | Target: $tgt_model | Version: $version | Module: $module_dir"
+
+                python scripts/train_post_porting_sft.py                     --config_path config/sft_train_${tgt_cfg_model}_${attribute}.yaml                     --src_model ${src_model}                     --tgt_model ${tgt_model}                     --module ${module_dir}                     --attribute ${attribute}                     --seed ${seed}                     --output_dir ./models/few_step_rl/${src_model}_to_${tgt_model}_${attribute}_${version}_seed${seed}                     --test_datasets ${test_csv}                     --output_json ./results/few_step_rl_${src_model}_to_${tgt_model}_${attribute}_${version}_seed${seed}.json
             done
         done
     done

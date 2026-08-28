@@ -220,7 +220,7 @@ def reward_function_v3(prompts: List[str], completions: List[str], model, tokeni
         contrast_prompts = [get_contrast_prompt(p) for p in prompts]
     rewards = []
     for prompt, cp, comp in zip(prompts, contrast_prompts, completions):
-        r_ce = contrastive_control_normalized_score(prompt, cp, comp, model, tokenizer)
+        r_ce = contrastive_control_effectiveness_score(prompt, cp, comp, model, tokenizer)
         r_slor = slor_score(comp, model, tokenizer, unigram_log_probs)
         r_div = diversity_score(comp)
         rewards.append(0.45 * r_ce + 0.275 * r_slor + 0.275 * r_div)
@@ -252,7 +252,7 @@ def reward_function_v4(prompts: List[str], completions: List[str], model, tokeni
         contrast_prompts = [get_contrast_prompt(p) for p in prompts]
     rewards = []
     for prompt, cp, comp in zip(prompts, contrast_prompts, completions):
-        r_ce = contrastive_control_normalized_score(prompt, cp, comp, model, tokenizer)
+        r_ce = contrastive_control_effectiveness_score(prompt, cp, comp, model, tokenizer)
         r_slor = slor_score(comp, model, tokenizer, unigram_log_probs)
         tokens = comp.strip().split()
         if tokens:

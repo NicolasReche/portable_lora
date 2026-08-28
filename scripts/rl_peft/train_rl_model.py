@@ -1,3 +1,4 @@
+import json
 from functools import partial
 import os
 import argparse
@@ -187,6 +188,16 @@ if __name__ == "__main__":
         report_to="wandb",  # enable logging to W&B
         run_name=args.run_name,  # name of the W&B run (optional)
     )
+    unigram_log_probs = None
+    unigram_path = "data/llama3_unigram_log_probs.json"
+    if os.path.exists(unigram_path):
+        with open(unigram_path, "r", encoding="utf-8") as f:
+            unigram_str = json.load(f)
+            unigram_log_probs = {int(k): v for k, v in unigram_str.items()}
+        print(f"Loaded unigram log probs from {unigram_path} (vocab size {len(unigram_log_probs)})")
+    else:
+        print(f"Warning: {unigram_path} not found. SLOR will fallback to uniform distribution.")
+
     if args.reward_version == 'v1':
         def selected_reward_func(prompts, completions, **kwargs):
             return reward_function_v1(prompts=prompts, completions=completions, model=model, tokenizer=tokenizer, **kwargs)
@@ -199,9 +210,13 @@ if __name__ == "__main__":
         def selected_reward_func(prompts, completions, **kwargs):
             return reward_function_v2_1(prompts=prompts, completions=completions, model=model, tokenizer=tokenizer, **kwargs)
         selected_reward_func.__name__ = 'reward_function_v2_1'
+    elif args.reward_version == 'v4':
+        def selected_reward_func(prompts, completions, **kwargs):
+            return reward_function_v4(prompts=prompts, completions=completions, model=model, tokenizer=tokenizer, unigram_log_probs=unigram_log_probs, **kwargs)
+        selected_reward_func.__name__ = 'reward_function_v4'
     else:
         def selected_reward_func(prompts, completions, **kwargs):
-            return reward_function_v3(prompts=prompts, completions=completions, model=model, tokenizer=tokenizer, **kwargs)
+            return reward_function_v3(prompts=prompts, completions=completions, model=model, tokenizer=tokenizer, unigram_log_probs=unigram_log_probs, **kwargs)
         selected_reward_func.__name__ = 'reward_function_v3'   
 
     trainer = GRPOTrainer(
